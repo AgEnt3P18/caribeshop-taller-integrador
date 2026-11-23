@@ -1,0 +1,5 @@
+resource_group_name  = "rg-caribeshop-tfstate"
+storage_account_name = "stcstfstateXXXXXX"
+container_name       = "tfstate"
+key                  = "caribeshop.tfstate"
+use_azuread_auth     = true

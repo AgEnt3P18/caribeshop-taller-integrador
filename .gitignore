@@ -1,0 +1,29 @@
+# Terraform: el estado y las variables reales NUNCA van a Git (S1)
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+backend.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+tfplan
+*.tfplan
+
+# Llaves y secretos
+*.pem
+*.key
+id_rsa*
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/

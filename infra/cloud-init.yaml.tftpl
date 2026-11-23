@@ -1,0 +1,44 @@
+#cloud-config
+# D3: la instancia se configura sola al arrancar. Sin paquetes externos:
+# la app usa solo la libreria estandar de Python (la salida a Internet esta bloqueada).
+package_update: false
+package_upgrade: false
+
+write_files:
+  - path: /opt/caribeshop/app.py
+    permissions: "0755"
+    owner: root:root
+    encoding: b64
+    content: ${app_b64}
+
+  # Configuracion NO sensible: nombre del vault y del secreto (el valor nunca se escribe aqui)
+  - path: /etc/caribeshop/config.json
+    permissions: "0644"
+    owner: root:root
+    content: |
+      {"vault_name": "${vault_name}", "secret_name": "${secret_name}", "work_ms": ${work_ms}, "secret_cache_seconds": 60}
+
+  - path: /etc/systemd/system/caribeshop.service
+    permissions: "0644"
+    owner: root:root
+    content: |
+      [Unit]
+      Description=CaribeShop web app
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      ExecStart=/usr/bin/python3 /opt/caribeshop/app.py
+      Restart=always
+      RestartSec=2
+      NoNewPrivileges=true
+      ProtectSystem=full
+      ReadWritePaths=/var/lib/caribeshop
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - mkdir -p /var/lib/caribeshop
+  - systemctl daemon-reload
+  - systemctl enable --now caribeshop.service
