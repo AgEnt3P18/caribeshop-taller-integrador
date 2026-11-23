@@ -154,7 +154,23 @@ class Handler(BaseHTTPRequestHandler):
         return self._json(404, {"error": "not found"})
 
 
+class ReusePortServer(ThreadingHTTPServer):
+    """Varios procesos escuchan el mismo puerto (SO_REUSEPORT): el kernel reparte
+    las conexiones y se aprovechan todos los vCPU pese al GIL de Python."""
+    daemon_threads = True
+    request_queue_size = 256
+
+    def server_bind(self):
+        if hasattr(socket, "SO_REUSEPORT"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        super().server_bind()
+
+
 if __name__ == "__main__":
-    ThreadingHTTPServer.daemon_threads = True
-    srv = ThreadingHTTPServer(("0.0.0.0", int(os.getenv("PORT", "80"))), Handler)
+    workers = int(os.getenv("WORKERS", str(os.cpu_count() or 1)))
+    if hasattr(os, "fork"):
+        for _ in range(workers - 1):
+            if os.fork() == 0:  # hijo: deja de crear procesos y sirve
+                break
+    srv = ReusePortServer(("0.0.0.0", int(os.getenv("PORT", "80"))), Handler)
     srv.serve_forever()

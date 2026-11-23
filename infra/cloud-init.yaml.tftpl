@@ -29,6 +29,7 @@ write_files:
 
       [Service]
       ExecStart=/usr/bin/python3 /opt/caribeshop/app.py
+      KillMode=control-group
       Restart=always
       RestartSec=2
       NoNewPrivileges=true

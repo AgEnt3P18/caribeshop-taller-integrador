@@ -21,24 +21,25 @@ class Shopper(HttpUser):
 
     @task(8)
     def browse(self):
-        self.client.get("/work", name="/work")
+        self.client.get("/work", name="/work", timeout=5)
 
     @task(1)
     def home(self):
-        self.client.get("/", name="/")
+        self.client.get("/", name="/", timeout=5)
 
 
 class CapacityShape(LoadTestShape):
     step_users = int(os.getenv("USERS_STEP", "5"))
     step_seconds = int(os.getenv("STEP_SECONDS", "60"))
     max_users = int(os.getenv("MAX_USERS", "120"))
+    start_users = int(os.getenv("START_USERS", "0"))
 
     def tick(self):
         t = self.get_run_time()
-        users = (int(t // self.step_seconds) + 1) * self.step_users
+        users = self.start_users + (int(t // self.step_seconds) + 1) * self.step_users
         if users > self.max_users:
             return None
-        return users, self.step_users
+        return users, max(self.step_users, 10)
 
 
 class StaircaseShape(LoadTestShape):
