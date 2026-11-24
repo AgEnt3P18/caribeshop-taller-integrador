@@ -28,3 +28,8 @@ __pycache__/
 *.pyc
 .venv/
 ~$*
+
+# Entregables que se gestionan fuera del repositorio
+informe/
+presentacion/
+informe_overleaf.zip
