@@ -83,6 +83,15 @@ cd ../bootstrap && terraform destroy   # opcional: elimina el estado
 
 El Key Vault queda en *soft delete* 7 días (purge protection), por diseño.
 
+## Acceso de soporte (sin SSH)
+
+El puerto 22 nunca se abre. El soporte en temporada alta usa el plano de control de Azure,
+autenticado con Entra ID y auditado en el registro de actividad:
+
+```bash
+az vmss run-command invoke -g rg-caribeshop -n vmss-caribeshop --instance-id <id>   --command-id RunShellScript --scripts "journalctl -u caribeshop -n 50"
+```
+
 ## Checklist de la línea base de seguridad
 
 - [x] Estado en backend remoto `azurerm` con `use_azuread_auth` (sin llaves compartidas); `*.tfstate`, `*.tfvars` y `backend.hcl` en `.gitignore`
