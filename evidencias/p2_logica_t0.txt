@@ -1,0 +1,7 @@
+Enable succeeded: 
+[stdout]
+T0_EPOCH=1795480739.047969196
+vmss-caribeshop000002
+
+[stderr]
+

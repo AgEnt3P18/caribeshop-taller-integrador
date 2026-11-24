@@ -1,0 +1,13 @@
+## S2 - instancias del VMSS y sus IPs (sin IP publica)
+Nic      PrivateIp
+-------  -----------
+nic-app  10.20.1.4
+nic-app  10.20.1.5
+
+## az vm list-ip-addresses (VMs independientes en el RG: debe estar vacio)
+
+
+## IPs publicas en el RG (solo la del balanceador)
+Name               Ip            Sku       Zones
+-----------------  ------------  --------  -------
+pip-lb-caribeshop  4.255.37.228  Standard  2,3,1

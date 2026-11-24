@@ -1,0 +1,4 @@
+## S4 - az role assignment list --assignee <principal_id> --all
+Role                    Scope
+----------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------
+Key Vault Secrets User  /subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya/secrets/db-password

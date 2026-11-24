@@ -1,0 +1,10 @@
+## E3 - Historial de ejecucion del autoscale (KQL: AutoscaleScaleActionsLog)
+CurrentInstanceCount    NewInstanceCount    ResultType    ScaleDirection    TableName      TimeGenerated
+----------------------  ------------------  ------------  ----------------  -------------  ----------------------------
+2                       1                   Succeeded     Decrease          PrimaryResult  2026-11-23T23:25:56.7689481Z
+1                       2                   Succeeded     Increase          PrimaryResult  2026-11-23T23:53:49.3102826Z
+2                       3                   Succeeded     Increase          PrimaryResult  2026-11-24T00:09:19.2543465Z
+3                       4                   Succeeded     Increase          PrimaryResult  2026-11-24T00:14:49.4268107Z
+4                       3                   Succeeded     Decrease          PrimaryResult  2026-11-24T00:26:49.0755649Z
+3                       2                   Succeeded     Decrease          PrimaryResult  2026-11-24T00:37:19.1950006Z
+1                       2                   Succeeded     Increase          PrimaryResult  2026-11-24T00:55:48.7366917Z

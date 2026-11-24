@@ -1,0 +1,4 @@
+## E2 - sonda de salud
+IntervalInSeconds    Name          NumberOfProbes    Port    ProbeThreshold    Protocol    ProvisioningState    RequestPath    ResourceGroup
+-------------------  ------------  ----------------  ------  ----------------  ----------  -------------------  -------------  ---------------
+5                    probe-health  2                 80      2                 Http        Succeeded            /health        rg-caribeshop

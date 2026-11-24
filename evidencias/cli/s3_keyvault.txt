@@ -1,0 +1,27 @@
+## S3 - Key Vault
+{
+  "defaultAction": "Deny",
+  "ipRules": [
+    "<IP-operador-1>/32",
+    "<IP-operador-2>/28"
+  ],
+  "name": "kv-cs-s0pya",
+  "purgeProtection": true,
+  "rbac": true,
+  "softDeleteDays": 7,
+  "subnets": [
+    "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourcegroups/rg-caribeshop/providers/microsoft.network/virtualnetworks/vnet-caribeshop/subnets/snet-app"
+  ]
+}
+{
+  "contentType": "text/plain",
+  "enabled": true,
+  "expires": "2027-02-21T23:07:48+00:00",
+  "name": "db-password"
+}
+
+## Endpoint /secret de la app (huella, nunca el valor)
+{"keyvault": "kv-cs-s0pya", "secret_name": "db-password", "length": 32, "sha256_prefix": "d1f1b00018c3", "cached": false, "host": "vmss-caribeshop000001"}
+{"keyvault": "kv-cs-s0pya", "secret_name": "db-password", "length": 32, "sha256_prefix": "d1f1b00018c3", "cached": true, "host": "vmss-caribeshop000001"}
+{"keyvault": "kv-cs-s0pya", "secret_name": "db-password", "length": 32, "sha256_prefix": "d1f1b00018c3", "cached": false, "host": "vmss-caribeshop000000"}
+{"keyvault": "kv-cs-s0pya", "secret_name": "db-password", "length": 32, "sha256_prefix": "d1f1b00018c3", "cached": true, "host": "vmss-caribeshop000001"}

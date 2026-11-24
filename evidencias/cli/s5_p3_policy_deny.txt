@@ -1,0 +1,24 @@
+## Asignaciones de politica en rg-caribeshop
+Name                Display                                   Enforcement
+------------------  ----------------------------------------  -------------
+allowed-locations   CaribeShop - Solo region eastus           Default
+deny-nic-public-ip  CaribeShop - Denegar NICs con IP publica  Default
+
+## Intento 1: NIC con IP publica en el RG (viola 'Network interfaces should not have public IPs')
+$ az network public-ip create -g rg-caribeshop -n pip-prueba-violacion --sku Standard
+WARNING: [Coming breaking change] In the coming release, the default behavior will be changed as follows when sku is Standard and zone is not provided: For zonal regions, you will get a zone-redundant IP indicated by zones:["1","2","3"]; For non-zonal regions, you will get a non zone-redundant IP indicated by zones:null.
+$ az network nic create -g rg-caribeshop -n nic-prueba-violacion --vnet-name vnet-caribeshop --subnet snet-app --public-ip-address pip-prueba-violacion
+ERROR: (RequestDisallowedByPolicy) Resource 'nic-prueba-violacion' was disallowed by policy. Policy identifiers: '[{"policyAssignment":{"name":"CaribeShop - Denegar NICs con IP publica","id":"/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Authorization/policyAssignments/deny-nic-public-ip"},"policyDefinition":{"name":"Network interfaces should not have public IPs","id":"/providers/Microsoft.Authorization/policyDefinitions/83a86a26-fd1f-447c-b59d-e51f44264114","version":"1.0.0"}}]'.
+Code: RequestDisallowedByPolicy
+Message: Resource 'nic-prueba-violacion' was disallowed by policy. Policy identifiers: '[{"policyAssignment":{"name":"CaribeShop - Denegar NICs con IP publica","id":"/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Authorization/policyAssignments/deny-nic-public-ip"},"policyDefinition":{"name":"Network interfaces should not have public IPs","id":"/providers/Microsoft.Authorization/policyDefinitions/83a86a26-fd1f-447c-b59d-e51f44264114","version":"1.0.0"}}]'.
+Target: nic-prueba-violacion
+
+## Intento 2: recurso fuera de la region permitida (viola 'Allowed locations')
+$ az network nsg create -g rg-caribeshop -n nsg-prueba-westus -l westus
+ERROR: (RequestDisallowedByPolicy) Resource 'nsg-prueba-westus' was disallowed by policy. Policy identifiers: '[{"policyAssignment":{"name":"CaribeShop - Solo region eastus","id":"/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Authorization/policyAssignments/allowed-locations"},"policyDefinition":{"name":"Allowed locations","id":"/providers/Microsoft.Authorization/policyDefinitions/e56962a6-4747-49cd-b67b-bf8b01975c4c","version":"1.1.0"}}]'.
+Code: RequestDisallowedByPolicy
+Message: Resource 'nsg-prueba-westus' was disallowed by policy. Policy identifiers: '[{"policyAssignment":{"name":"CaribeShop - Solo region eastus","id":"/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Authorization/policyAssignments/allowed-locations"},"policyDefinition":{"name":"Allowed locations","id":"/providers/Microsoft.Authorization/policyDefinitions/e56962a6-4747-49cd-b67b-bf8b01975c4c","version":"1.1.0"}}]'.
+Target: nsg-prueba-westus
+
+## Limpieza de la IP publica de prueba
+eliminada

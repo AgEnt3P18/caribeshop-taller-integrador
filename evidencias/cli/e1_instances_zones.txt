@@ -1,0 +1,5 @@
+## E1 - instancias y zonas
+Instance           Zone    State
+-----------------  ------  ---------
+vmss-caribeshop_0  2       Succeeded
+vmss-caribeshop_1  3       Succeeded

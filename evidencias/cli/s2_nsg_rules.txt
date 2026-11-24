@@ -1,0 +1,10 @@
+## S2 - reglas del NSG
+Prio    Dir       Acc    Proto    Src                Dst             Port    Name
+------  --------  -----  -------  -----------------  --------------  ------  ----------------------
+100     Outbound  Allow  Tcp      VirtualNetwork     AzureKeyVault   443     Allow-KeyVault-Out
+100     Inbound   Allow  Tcp      Internet           VirtualNetwork  80      Allow-HTTP-Internet
+110     Outbound  Allow  Tcp      VirtualNetwork     AzureMonitor    443     Allow-AzureMonitor-Out
+110     Inbound   Allow  Tcp      AzureLoadBalancer  *               80      Allow-LB-Probes
+120     Outbound  Allow  Tcp      VirtualNetwork     Storage.eastus  443     Allow-Storage-Out
+4000    Outbound  Deny   *        *                  Internet        *       Deny-Internet-Out
+4096    Inbound   Deny   *        *                  *               *       Deny-All-Inbound

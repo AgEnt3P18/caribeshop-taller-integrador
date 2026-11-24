@@ -44,17 +44,26 @@ def read_tsv(path):
     return pts
 
 
-def capacity(src, dst, cpu=None):
+def capacity(src, dst, src2=None):
     h = [r for r in read_hist(src) if r["p95"] is not None]
+    if src2:  # segunda rampa (continua desde START_USERS): se descartan sus escalones de arranque
+        top = max(r["users"] for r in h)
+        h += [r for r in read_hist(src2) if r["p95"] is not None and r["users"] > top]
     steps = {}
     for r in h:
         steps.setdefault(r["users"], []).append(r)
+    # se descartan las primeras muestras de cada escalon (transitorio del spawn)
+    steps = {u: (rs[3:] if len(rs) > 6 else rs) for u, rs in steps.items()}
     users = sorted(steps)
     rps = [st.mean(x["rps"] for x in steps[u]) for u in users]
     p95 = [st.median(x["p95"] for x in steps[u]) for u in users]
     p50 = [st.median(x["p50"] for x in steps[u]) for u in users]
     fig, ax = plt.subplots(figsize=(8, 4.2))
-    ax.plot(rps, p95, "-o", color=ORANGE, label="p95 (mediana del escalón)")
+    art = [abs(v - 1200) < 1 and u < 170 for u, v in zip(users, p95)]  # RTO TCP 1 s + RTT
+    ax.plot([x for x, a in zip(rps, art) if not a], [y for y, a in zip(p95, art) if not a], "-o", color=ORANGE,
+            label="p95 (mediana del escalón)")
+    ax.plot([x for x, a in zip(rps, art) if a], [y for y, a in zip(p95, art) if a], "o", mfc="white", mec=GRAY,
+            label="p95 = 1,2 s: retransmisión SYN en la red del cliente")
     ax.plot(rps, p50, "-o", color=BLUE, ms=3, label="p50")
     ax.axhline(1000, color=RED, ls="--", lw=1, label="umbral 1 s")
     for u, x, y in zip(users, rps, p95):
@@ -73,8 +82,9 @@ def capacity(src, dst, cpu=None):
 
 def staircase(src, dst, inst_tsv, cpu_tsv):
     h = read_hist(src)
-    inst = read_tsv(inst_tsv)
-    cpu = read_tsv(cpu_tsv)
+    t_start, t_end = h[0]["t"] - dt.timedelta(minutes=1), dt.datetime.fromtimestamp(h[-1]["t"].timestamp() + 600, dt.timezone.utc)
+    inst = [p for p in read_tsv(inst_tsv) if t_start <= p[0] <= t_end]
+    cpu = [p for p in read_tsv(cpu_tsv) if t_start <= p[0] <= t_end]
     fig, axes = plt.subplots(3, 1, figsize=(9, 7.5), sharex=True)
     t = [r["t"] for r in h]
     axes[0].plot(t, [r["rps"] for r in h], color=BLUE, lw=1.2, label="RPS")
@@ -101,37 +111,42 @@ def staircase(src, dst, inst_tsv, cpu_tsv):
     axes[2].legend(loc="upper left", frameon=False)
     ax3.legend(loc="upper right", frameon=False)
     axes[2].xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
+    axes[2].set_xlim(t_start, t_end)
     fig.tight_layout()
     fig.savefig(dst)
 
 
-def failure(src, dst, t_fail, title):
-    rows = list(csv.DictReader(open(src, encoding="utf-8")))
+def failure(src, dst, t_fail, title, events="", bucket=5):
+    """Peticiones/s por instancia y fallidas, en ventanas de `bucket` s alrededor de T0.
+    events: "seg:etiqueta;seg:etiqueta" para marcar hitos."""
+    from matplotlib.patches import Patch
     t0 = float(t_fail)
-    buckets = {}
+    rows = list(csv.DictReader(open(src, encoding="utf-8")))
+    bk = {}
     for r in rows:
-        s = int(float(r["ts"]) - t0)
-        b = buckets.setdefault(s, {"ok": 0, "fail": 0, "inst": {}})
-        if r["status"] == "200":
-            b["ok"] += 1
-            b["inst"][r["instance"]] = b["inst"].get(r["instance"], 0) + 1
-        else:
-            b["fail"] += 1
-    secs = sorted(buckets)
-    insts = sorted({i for b in buckets.values() for i in b["inst"]})
-    fig, ax = plt.subplots(figsize=(9, 3.8))
-    bottom = [0] * len(secs)
-    palette = [BLUE, GREEN, ORANGE, "#9333ea", "#0891b2"]
-    for k, i in enumerate(insts):
-        vals = [buckets[s]["inst"].get(i, 0) for s in secs]
-        ax.bar(secs, vals, bottom=bottom, width=1.0, color=palette[k % len(palette)], label=i.replace("vmss-caribeshop", "inst "))
-        bottom = [a + b for a, b in zip(bottom, vals)]
-    ax.bar(secs, [buckets[s]["fail"] for s in secs], bottom=bottom, width=1.0, color=RED, label="fallidas")
-    ax.axvline(0, color="black", ls="--", lw=1)
-    ax.set_xlabel("Segundos desde la inyección de la falla")
-    ax.set_ylabel("Peticiones / s")
+        b = int((float(r["ts"]) - t0) // bucket) * bucket
+        e = bk.setdefault(b, {})
+        k = r["instance"].replace("vmss-caribeshop0000", "inst ") if r["status"] == "200" else "fallidas"
+        e[k] = e.get(k, 0) + 1
+    xs = sorted(bk)
+    keys = sorted({k for v in bk.values() for k in v if k != "fallidas"}) + ["fallidas"]
+    pal = [BLUE, GREEN, ORANGE, "#9333ea", "#0891b2"]
+    colors = {k: (RED if k == "fallidas" else pal[i % len(pal)]) for i, k in enumerate(keys)}
+    fig, ax = plt.subplots(figsize=(9, 3.6))
+    bot = [0] * len(xs)
+    for k in keys:
+        v = [bk[x].get(k, 0) / bucket for x in xs]
+        ax.bar(xs, v, bottom=bot, width=bucket, align="edge", color=colors[k], linewidth=0)
+        bot = [a + b for a, b in zip(bot, v)]
+    for i, ev in enumerate(e for e in events.split(";") if e):
+        x, lab = ev.split(":", 1)
+        ax.axvline(float(x), color="black", ls="--", lw=1)
+        ax.text(float(x) + 4, 11.3 - 0.8 * (i % 2), lab, fontsize=8)
+    ax.set_ylim(0, 12)
+    ax.set_xlabel("Segundos desde la falla (T0)")
+    ax.set_ylabel(f"Peticiones/s (prom. {bucket} s)")
     ax.set_title(title)
-    ax.legend(loc="upper left", frameon=False, ncol=5, fontsize=8)
+    ax.legend(handles=[Patch(color=colors[k], label=k) for k in keys], frameon=False, ncol=len(keys), fontsize=8, loc="lower center")
     fig.tight_layout()
     fig.savefig(dst)
 
@@ -139,8 +154,8 @@ def failure(src, dst, t_fail, title):
 if __name__ == "__main__":
     mode = sys.argv[1]
     if mode == "capacity":
-        capacity(sys.argv[2], sys.argv[3])
+        capacity(sys.argv[2], sys.argv[3], sys.argv[4] if len(sys.argv) > 4 else None)
     elif mode == "staircase":
         staircase(*sys.argv[2:6])
     elif mode == "failure":
-        failure(*sys.argv[2:6])
+        failure(*sys.argv[2:7])

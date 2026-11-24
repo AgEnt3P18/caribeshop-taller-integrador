@@ -1,0 +1,41 @@
+## E3/E4 - autoscale y reparacion automatica
+{
+  "max": "4",
+  "min": "2",
+  "rules": [
+    {
+      "cooldown": "PT5M",
+      "dir": "Increase",
+      "metric": "Percentage CPU",
+      "op": "GreaterThan",
+      "thr": 70.0,
+      "window": "PT5M"
+    },
+    {
+      "cooldown": "PT10M",
+      "dir": "Decrease",
+      "metric": "Percentage CPU",
+      "op": "LessThan",
+      "thr": 30.0,
+      "window": "PT10M"
+    }
+  ]
+}
+{
+  "repair": {
+    "enabled": true,
+    "gracePeriod": "PT10M",
+    "repairAction": "Replace"
+  },
+  "sku": {
+    "capacity": 2,
+    "name": "Standard_D2s_v4",
+    "tier": "Standard"
+  },
+  "zoneBalance": true,
+  "zones": [
+    "2",
+    "3",
+    "1"
+  ]
+}

@@ -1,0 +1,12 @@
+## E5 - Historial de alertas de Azure Monitor (ultimas 24 h) - API Microsoft.AlertsManagement
+Regla                         Sev    Condicion    Disparada                     Resuelta                      AccionGrupo
+----------------------------  -----  -----------  ----------------------------  ----------------------------  -------------
+alert-health-probe-below-100  Sev2   Resolved     2026-11-24T00:12:29.1738535Z  2026-11-24T00:26:41.3547685Z  False
+alert-health-probe-below-100  Sev2   Resolved     2026-11-23T23:57:27.9051375Z  2026-11-24T00:05:29.543648Z   False
+alert-vmss-cpu-sustained      Sev3   Resolved     2026-11-23T23:53:11.154834Z   2026-11-24T00:00:32.6578722Z  False
+alert-health-probe-below-100  Sev2   Resolved     2026-11-23T23:14:28.2661225Z  2026-11-23T23:30:29.2852223Z  False
+
+## Grupo de acciones (receptor de correo)
+Nombre    Estado    EsquemaComun
+--------  --------  --------------
+operador  Enabled   True

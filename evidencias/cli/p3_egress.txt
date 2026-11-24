@@ -1,0 +1,24 @@
+## P3.2 - Filtrado de salida, ejecutado DENTRO de la instancia 1 (az vmss run-command invoke)
+Enable succeeded: 
+[stdout]
+--- Internet arbitrario (debe fallar):
+https://www.example.com      000
+BLOQUEADO (timeout/err 28)
+https://github.com           000
+BLOQUEADO (timeout/err 28)
+http://neverssl.com          000
+BLOQUEADO (timeout/err 28)
+--- Servicios permitidos por etiqueta de servicio (deben responder):
+https://kv-cs-s0pya.vault.azure.net 401 (401 = alcanzable, requiere token)
+IMDS 169.254.169.254         200
+--- Puerto 22 escuchando localmente pero inalcanzable desde Internet (NSG):
+LISTEN 1      256          0.0.0.0:80        0.0.0.0:*          
+LISTEN 0      256          0.0.0.0:80        0.0.0.0:*          
+LISTEN 0      4096         0.0.0.0:22        0.0.0.0:*          
+LISTEN 0      4096            [::]:22           [::]:*          
+
+[stderr]
+
+
+## Desde Internet (operador) al puerto 22 de la IP publica del LB:
+22/tcp sin respuesta (no existe regla NAT ni NSG que lo permita)
