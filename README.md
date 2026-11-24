@@ -1,133 +1,283 @@
-# CaribeShop · Plataforma segura, escalable y altamente disponible en Azure
+<div align="center">
 
-Taller integrador — Infraestructura para TI (UTB, NRC 1216).
-Integrantes: Santiago Payares González · Cristian Matteo Benitez Montes.
+# 🏝️ CaribeShop en Azure
 
-Toda la plataforma se despliega con **Terraform** (estado remoto en Azure Storage con
-Entra ID, sin llaves), se valida en **GitHub Actions** (fmt · validate · Checkov bloqueante)
-y se prueba con **Locust** y pruebas de falla.
+**Plataforma segura, escalable y altamente disponible, desplegada 100 % como código**
 
-## Arquitectura
+[![IaC DevSecOps](https://github.com/AgEnt3P18/caribeshop-taller-integrador/actions/workflows/iac-security.yml/badge.svg)](https://github.com/AgEnt3P18/caribeshop-taller-integrador/actions/workflows/iac-security.yml)
+![Terraform](https://img.shields.io/badge/Terraform-azurerm%204.x-7B42BC?logo=terraform&logoColor=white)
+![Azure](https://img.shields.io/badge/Microsoft%20Azure-East%20US-0078D4?logo=microsoftazure&logoColor=white)
+![Checkov](https://img.shields.io/badge/Checkov-0%20fallos-2E7D32)
+![Locust](https://img.shields.io/badge/Locust-pruebas%20de%20carga-1B8E3E)
 
-```
-                Internet
-                    │  HTTP 80
-     IP pública Standard (zonas 1-2-3)  ──  FQDN caribeshop-<sufijo>.eastus.cloudapp.azure.com
-                    │
-     Load Balancer Standard ── sonda HTTP /health (5 s × 2)
-           │  regla 80 + regla de salida (SNAT explícito)
- ┌──────── snet-app 10.20.1.0/24 ── NSG nsg-app ────────────────────────────────┐
- │  Entrada: 80 desde Internet, sondas AzureLoadBalancer; todo lo demás Deny     │
- │  Salida : 443 → AzureKeyVault, AzureMonitor, Storage.eastus; Internet Deny    │
- │                                                                               │
- │  VMSS vmss-caribeshop  (Standard_D2s_v4, zonas 1/2/3, min 2 · max 4)          │
- │   · Ubuntu 24.04 + cloud-init (app Python stdlib)  · sin IP pública           │
- │   · identidad administrada (SystemAssigned)       · reparación automática     │
- │   · autoscale CPU >70 % (+1, 5 min) / <30 % (−1, 10 min)                      │
- └───────────┬───────────────────────────────────────┬───────────────────────────┘
-             │ service endpoint Microsoft.KeyVault    │ service endpoint Microsoft.Storage
-   Key Vault (RBAC, purge protection, firewall)   Storage (sin llaves, firewall)
-             │ AuditEvent
-   Log Analytics ◄── diagnostic settings (KV, autoscale, LB) ── alertas (correo)
+Taller integrador · Infraestructura para TI · Universidad Tecnológica de Bolívar · NRC 1216
 
- Azure Policy (Deny) sobre el RG: NIC sin IP pública · solo región eastus
- GitHub Actions: terraform fmt -check · validate · Checkov (bloqueante)
-```
+</div>
 
-## Estructura
+---
 
-| Ruta | Contenido |
+## Contenido
+
+- [El reto](#-el-reto)
+- [Arquitectura](#-arquitectura)
+- [Requisitos cubiertos](#-requisitos-cubiertos)
+- [Resultados](#-resultados)
+- [Estructura del repositorio](#-estructura-del-repositorio)
+- [Despliegue](#-despliegue)
+- [Pipeline DevSecOps](#-pipeline-devsecops)
+- [Línea base de seguridad](#-línea-base-de-seguridad)
+- [Operación y soporte](#-operación-y-soporte)
+- [Autores](#-autores)
+
+---
+
+## 🎯 El reto
+
+CaribeShop, una tienda en línea de Cartagena, tuvo tres incidentes el año pasado. Esta plataforma
+responde a cada uno:
+
+| Incidente | Solución implementada |
 |---|---|
-| `bootstrap/` | Cuenta de almacenamiento del estado remoto (se ejecuta una sola vez) |
-| `infra/` | Red, NSG, LB, VMSS, autoscale, Key Vault, Storage, monitoreo, políticas |
-| `infra/cloud-init.yaml.tftpl` | Configuración automática de la instancia (D3) |
-| `app/app.py` | App (solo biblioteca estándar): `/`, `/health`, `/secret`, `/work`, `/egress-check` |
-| `load/locustfile.py` | Perfiles `capacity`, `staircase` (28 min) y `steady` |
-| `scripts/` | Pruebas de falla, seguridad y recolección de evidencias |
-| `evidencias/` | CSV y HTML de Locust, salidas de comandos y capturas |
-| `.github/workflows/iac-security.yml` | Pipeline DevSecOps |
+| 🔥 Se cayó por **saturación** durante una promoción | Autoscale de 2 a 4 servidores según la CPU |
+| 💥 Se cayó por la **falla de su única VM** | Servidores en 3 zonas, balanceador con sonda de salud y reparación automática |
+| 🔓 **Contraseña en el repositorio** y **SSH abierto** a Internet | Secreto en Key Vault con identidad administrada, red sin acceso de administración y salida a Internet bloqueada |
 
-## Variables requeridas (`infra/terraform.tfvars`, ignorado por Git)
+---
 
-| Variable | Descripción |
+## 🏗️ Arquitectura
+
+```mermaid
+flowchart LR
+    U([👥 Clientes<br/>Internet]) -->|HTTP 80| PIP[IP pública Standard<br/>zonal-redundante]
+    PIP --> LB[⚖️ Load Balancer<br/>sonda /health cada 5 s]
+
+    subgraph NET["🔒 Red privada snet-app · solo entra tráfico web · salida a Internet bloqueada"]
+        direction TB
+        V1[🖥️ Servidor · zona 1]
+        V2[🖥️ Servidor · zona 2]
+        V3[🖥️ Servidor · zona 3]
+    end
+
+    LB --> V1 & V2 & V3
+    NET -->|identidad administrada| KV[(🔑 Key Vault<br/>contraseña)]
+    NET -->|métricas y registros| MON[📊 Log Analytics<br/>alertas por correo]
+    KV -.->|auditoría de lecturas| MON
+```
+
+| Componente | Configuración clave |
 |---|---|
-| `subscription_id` | Suscripción de Azure |
-| `operator_ips` | CIDR de salida del operador (firewalls de Key Vault y Storage) |
-| `alert_email` | Correo para alertas y notificaciones del autoscale |
-| `location` | Región (por defecto `eastus`) |
-| `vm_size` | Tamaño de VM (por defecto `Standard_D2s_v4`) |
-| `max_instances` | Tope del autoscale (por defecto 4; cuota regional 10 vCPU) |
+| **Servidores (VMSS)** | `Standard_D2s_v4` · zonas 1, 2 y 3 · mínimo 2, máximo 4 · sin IP pública · reparación automática · instalación con cloud-init |
+| **Autoscale** | Agrega uno si la CPU supera 70 % por 5 min · quita uno si baja de 30 % por 10 min |
+| **Balanceador** | Standard, zonal-redundante · sonda HTTP a `/health` cada 5 s (2 fallos = fuera) |
+| **Red (NSG)** | Entra solo el puerto 80 · sale solo hacia Key Vault, Monitor y Storage · todo lo demás denegado |
+| **Key Vault** | RBAC · purge protection · firewall (subred + operador) · secreto con expiración |
+| **Gobierno** | Azure Policy *Deny*: NIC sin IP pública y recursos solo en `eastus` |
+| **Estado de Terraform** | Backend remoto en Azure Storage, acceso con Entra ID, sin llaves compartidas |
 
-Ver `infra/terraform.tfvars.example` y `infra/backend.hcl.example`.
+---
 
-## Desplegar
+## ✅ Requisitos cubiertos
+
+<details>
+<summary><b>Ver trazabilidad completa (S1–S6 · E1–E5 · D1–D3)</b></summary>
+
+| ID | Requisito | Implementación | Evidencia |
+|---|---|---|---|
+| S1 | Todo en Terraform, estado remoto | [`infra/providers.tf`](infra/providers.tf), [`bootstrap/`](bootstrap/) | Git sin estado ni credenciales |
+| S2 | Red de mínimo privilegio | [`infra/network.tf`](infra/network.tf) | [`s2_nsg_rules.txt`](evidencias/cli/s2_nsg_rules.txt), [`s2_vmss_ips.txt`](evidencias/cli/s2_vmss_ips.txt) |
+| S3 | Secreto en Key Vault con identidad administrada | [`infra/keyvault.tf`](infra/keyvault.tf) | [`s3_keyvault.txt`](evidencias/cli/s3_keyvault.txt) |
+| S4 | Identidad solo lee secretos | [`infra/keyvault.tf`](infra/keyvault.tf) | [`s4_role_assignments.txt`](evidencias/cli/s4_role_assignments.txt) |
+| S5 | Azure Policy con efecto Deny | [`infra/policy.tf`](infra/policy.tf) | [`s5_p3_policy_deny.txt`](evidencias/cli/s5_p3_policy_deny.txt) |
+| S6 | Auditoría del Key Vault | [`infra/monitoring.tf`](infra/monitoring.tf) | [`s6_kql_secretget.txt`](evidencias/cli/s6_kql_secretget.txt) |
+| E1 | VMSS en 3 zonas, mínimo 2 | [`infra/compute.tf`](infra/compute.tf) | [`e1_instances_zones.txt`](evidencias/cli/e1_instances_zones.txt) |
+| E2 | Sonda de salud dedicada | [`infra/loadbalancer.tf`](infra/loadbalancer.tf) | [`e2_dipavailability.json`](evidencias/e2_dipavailability.json) |
+| E3 | Autoscale con histéresis | [`infra/compute.tf`](infra/compute.tf) | [`e3_autoscale_history.txt`](evidencias/cli/e3_autoscale_history.txt) |
+| E4 | Reparación automática | [`infra/compute.tf`](infra/compute.tf) | [`e4_activity_log.txt`](evidencias/cli/e4_activity_log.txt) |
+| E5 | Alertas con correo | [`infra/monitoring.tf`](infra/monitoring.tf) | [`e5_alertas.txt`](evidencias/cli/e5_alertas.txt) |
+| D1 | Pipeline con Checkov bloqueante | [`.github/workflows/iac-security.yml`](.github/workflows/iac-security.yml) | PR [#1](../../pull/1) bloqueado · PR [#2](../../pull/2) aprobado |
+| D2 | Cada `#checkov:skip` justificado | Comentarios en cada recurso de [`infra/`](infra/) | 11 riesgos aceptados |
+| D3 | Instancia configurada sola al arrancar | [`infra/cloud-init.yaml.tftpl`](infra/cloud-init.yaml.tftpl), [`app/app.py`](app/app.py) | Reimage sin pasos manuales |
+
+</details>
+
+---
+
+## 📈 Resultados
+
+| Prueba | Qué se midió | Resultado |
+|---|---|---|
+| **P1.1** Capacidad | Un solo servidor, carga creciente | **119 peticiones/s** con p95 < 1 s |
+| **P1.2** Escalamiento | Perfil escalonado de 35 min | **2 → 4 → 2** servidores · **0,55 %** de error |
+| **P2.1** Falla lógica | Un servidor responde 503 en `/health` | Fuera del balanceador en **8 s**, sin errores adicionales |
+| **P2.2** Falla abrupta | Se elimina un servidor con carga | Capacidad mínima recuperada en **109 s** |
+| **P3** Seguridad | Intentos de romper los controles | Firewall, egress y Azure Policy **bloquearon** todo |
+
+<p align="center">
+  <img src="evidencias/graficos/p1_escalonado.png" alt="Prueba escalonada: carga, latencia, CPU e instancias" width="85%"/>
+  <br/><em>P1.2 · el autoscale agrega servidores cuando la CPU supera 70 % y los retira cuando baja</em>
+</p>
+
+<details>
+<summary><b>Más gráficos</b></summary>
+
+<p align="center">
+  <img src="evidencias/graficos/p1_capacidad.png" alt="Capacidad de una instancia" width="80%"/>
+  <br/><em>P1.1 · latencia frente a peticiones por segundo con un solo servidor</em>
+</p>
+<p align="center">
+  <img src="evidencias/graficos/p2_abrupta.png" alt="Falla abrupta" width="80%"/>
+  <br/><em>P2.2 · ráfaga de errores de 15 s y nueva instancia a los 109 s</em>
+</p>
+
+</details>
+
+La grabación de la demo en vivo (scale-out y falla abrupta) está en
+[`evidencias/video/`](evidencias/video/).
+
+---
+
+## 📁 Estructura del repositorio
+
+```text
+.
+├── .github/workflows/
+│   └── iac-security.yml      # fmt · validate · Checkov (bloqueante)
+├── bootstrap/                # Backend remoto del estado (se aplica una sola vez)
+├── infra/                    # Plataforma completa en Terraform
+│   ├── network.tf            #   VNet, subred y NSG
+│   ├── loadbalancer.tf       #   IP pública, balanceador y sonda
+│   ├── compute.tf            #   VMSS, autoscale y reparación automática
+│   ├── keyvault.tf           #   Key Vault, secreto y roles
+│   ├── storage.tf            #   Storage sin llaves
+│   ├── monitoring.tf         #   Log Analytics, diagnósticos y alertas
+│   ├── policy.tf             #   Azure Policy (Deny)
+│   └── cloud-init.yaml.tftpl #   Instalación automática de la app
+├── app/app.py                # App web (solo biblioteca estándar de Python)
+├── load/locustfile.py        # Perfiles de carga: capacity · staircase · steady
+├── scripts/                  # Pruebas de falla, monitor y gráficos
+└── evidencias/               # CSV/HTML de Locust, salidas de CLI, gráficos y video
+```
+
+La aplicación expone `/` (portada), `/health` (sonda), `/secret` (lee el secreto y muestra solo su
+longitud y huella), `/work` (carga de CPU) y `/egress-check` (prueba de salida a Internet).
+
+---
+
+## 🚀 Despliegue
+
+### Requisitos previos
+
+- [Terraform](https://developer.hashicorp.com/terraform/install) ≥ 1.6
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) con sesión iniciada (`az login`)
+- Cuota de al menos 8 vCPU de la familia DSv4 en la región
+
+### 1. Backend remoto (una sola vez)
 
 ```bash
-az login
-# 1. Backend remoto (una vez)
-cd bootstrap && terraform init && terraform apply
+cd bootstrap
+terraform init
+terraform apply -var subscription_id=<id> -var 'operator_ips=["<tu-ip>/32"]'
 terraform output -raw backend_config > ../infra/backend.hcl
-# 2. Plataforma
+```
+
+### 2. Plataforma
+
+```bash
 cd ../infra
+cp terraform.tfvars.example terraform.tfvars   # completar los valores
 terraform init -backend-config=backend.hcl
-terraform plan -out tfplan && terraform apply tfplan
+terraform plan -out tfplan
+terraform apply tfplan
 terraform output app_url
 ```
 
-## Destruir
+<details>
+<summary><b>Variables de <code>infra/terraform.tfvars</code></b> (ignorado por Git)</summary>
+
+| Variable | Descripción | Por defecto |
+|---|---|---|
+| `subscription_id` | Suscripción de Azure | — |
+| `operator_ips` | Rangos CIDR del operador, permitidos en los firewalls | — |
+| `alert_email` | Correo para alertas y avisos del autoscale | — |
+| `location` | Región | `eastus` |
+| `vm_size` | Tamaño de los servidores | `Standard_D2s_v4` |
+| `max_instances` | Máximo del autoscale | `4` |
+
+</details>
+
+### 3. Destruir
 
 ```bash
 cd infra && terraform destroy
-cd ../bootstrap && terraform destroy   # opcional: elimina el estado
+cd ../bootstrap && terraform destroy   # opcional: elimina también el estado
 ```
 
-El Key Vault queda en *soft delete* 7 días (purge protection), por diseño.
+> [!NOTE]
+> El Key Vault queda en *soft delete* durante 7 días por la purge protection. Es el
+> comportamiento esperado y no genera costo.
 
-## Acceso de soporte (sin SSH)
+---
 
-El puerto 22 nunca se abre. El soporte en temporada alta usa el plano de control de Azure,
-autenticado con Entra ID y auditado en el registro de actividad:
+## 🔁 Pipeline DevSecOps
+
+Cada pull request y cada push a `main` pasan por GitHub Actions:
+
+```mermaid
+flowchart LR
+    PR([Pull request]) --> F[terraform fmt -check]
+    F --> V[terraform validate]
+    V --> C{Checkov}
+    C -->|sin hallazgos| OK([✅ Se puede fusionar])
+    C -->|hallazgo| KO([❌ Bloqueado])
+```
+
+Para demostrarlo, el PR [#1](../../pull/1) abrió SSH a Internet y Checkov lo bloqueó
+(`CKV_AZURE_10`). El PR [#2](../../pull/2) lo corrigió y se fusionó en verde.
+
+---
+
+## 🛡️ Línea base de seguridad
+
+- [x] Estado de Terraform en backend remoto con Entra ID; `*.tfstate`, `*.tfvars` y `backend.hcl` fuera de Git
+- [x] Sin credenciales en el código: el secreto se genera con Terraform y vive solo en Key Vault
+- [x] Ninguna VM con IP pública; la única es la del balanceador
+- [x] SSH y RDP no expuestos: el NSG solo permite el puerto 80
+- [x] Salida a Internet bloqueada (solo Key Vault, Monitor y Storage)
+- [x] Key Vault con RBAC, purge protection, firewall y secreto con expiración
+- [x] La identidad de los servidores solo puede leer **un** secreto
+- [x] Storage sin llaves compartidas, con TLS 1.2 y firewall
+- [x] Azure Policy *Deny* asignada por Terraform
+- [x] Auditoría del Key Vault en Log Analytics y alertas por correo
+- [x] Checkov bloqueante; cada `#checkov:skip` con su justificación
+
+---
+
+## 🧰 Operación y soporte
+
+El puerto 22 nunca se abre. El soporte usa el plano de control de Azure, autenticado con Entra ID
+y registrado en el registro de actividad:
 
 ```bash
-az vmss run-command invoke -g rg-caribeshop -n vmss-caribeshop --instance-id <id>   --command-id RunShellScript --scripts "journalctl -u caribeshop -n 50"
+az vmss run-command invoke -g rg-caribeshop -n vmss-caribeshop --instance-id <id> \
+  --command-id RunShellScript --scripts "journalctl -u caribeshop -n 50"
 ```
 
-## Resultados principales
-
-| Prueba | Resultado |
+| Indicador | Valor |
 |---|---|
-| P1.1 Capacidad de 1 instancia (D2s_v4) | **119 RPS** con p95 < 1 s · 112 RPS con p95 < 500 ms |
-| P1.2 Perfil escalonado (35 min) | 2 → 3 → 4 → 3 → 2 instancias · 207 435 peticiones · **0,55 %** de error |
-| P2.1 Falla lógica (`/health` → 503) | Sale del LB en **8,2 s** · error = línea base · reparación automática a los 11 min |
-| P2.2 Falla abrupta (instancia eliminada) | Errores solo 15 s · capacidad mínima recuperada en **109 s** |
-| P3 Seguridad | Cloud Shell → `ForbiddenByFirewall` · egress bloqueado · `RequestDisallowedByPolicy` |
-| D1 DevSecOps | PR #1 bloqueado por `CKV_AZURE_10`; PR #2 corregido y fusionado |
+| SLA compuesto estimado | **99,97 %** (IP pública × balanceador × VMSS multi-zona) |
+| Costo mensual con 2 servidores | **≈ USD 174** |
+| Ahorro del autoscale frente a 4 servidores fijos | **≈ 37 %** |
 
-## Entregables en este repositorio
+**Estado actual:** los recursos de la plataforma se eliminaron con `terraform destroy` y se
+verificó en el portal ([`destroy_verificacion.txt`](evidencias/cli/destroy_verificacion.txt)).
+Solo se conserva el backend del estado para poder volver a desplegar con un `terraform apply`.
 
-- `informe/`: fuentes LaTeX (`main_overleaf.tex` autocontenido + `figuras/`) y `vista_previa_informe.pdf`.
-- `informe_overleaf.zip`: subir a Overleaf; agregar `logo_utb` a la raíz del proyecto.
-- `presentacion/CaribeShop_video_5min.pptx`: 7 diapositivas para el video de 5 min (incluye el clip de la demo) y el guion para leer en `presentacion/guion_video_5min.pdf`.
-- `evidencias/video/`: grabación de la demo en vivo (tiempo real y acelerada).
-- `evidencias/`: CSV/HTML de Locust, salidas de CLI, KQL, gráficos y capturas.
+---
 
-## Estado final
+## 👥 Autores
 
-Todos los recursos de la plataforma se destruyeron con `terraform destroy` (33 recursos) y se
-verificó en el portal (`evidencias/cli/destroy_verificacion.txt`). Solo permanece
-`rg-caribeshop-tfstate` (estado remoto) para poder redesplegar con un `terraform apply`.
+| | |
+|---|---|
+| **Santiago Payares González** | **Cristian Matteo Benitez Montes** |
 
-## Checklist de la línea base de seguridad
-
-- [x] Estado en backend remoto `azurerm` con `use_azuread_auth` (sin llaves compartidas); `*.tfstate`, `*.tfvars` y `backend.hcl` en `.gitignore`
-- [x] Sin credenciales en el código: el secreto lo genera `random_password` y vive solo en Key Vault y en el estado cifrado
-- [x] Ninguna VM con IP pública; la única IP pública es la del balanceador
-- [x] SSH/RDP no expuestos: NSG con `Deny-All-Inbound` y solo 80 desde Internet/AzureLoadBalancer
-- [x] Salida a Internet denegada en el NSG (solo Key Vault, Monitor y Storage por etiqueta de servicio)
-- [x] Key Vault con RBAC, purge protection, firewall (subred + IP del operador) y secreto con expiración (90 días)
-- [x] Identidad administrada del VMSS con **Key Vault Secrets User** con alcance **al secreto** (mínimo privilegio)
-- [x] Storage sin llaves compartidas, TLS 1.2, sin acceso público a blobs y con firewall
-- [x] Azure Policy con efecto Deny asignada por Terraform (NIC con IP pública · ubicaciones permitidas)
-- [x] Diagnostic settings del Key Vault hacia Log Analytics (AuditEvent)
-- [x] Alertas de Azure Monitor (sonda < 100 %, CPU sostenida) con correo
-- [x] Pipeline con `terraform fmt -check`, `validate` y Checkov bloqueante; cada `#checkov:skip` justificado
+Revisado por **Prof. Rafael Enrique Monterroza Barrios** · Infraestructura para TI · Universidad Tecnológica de Bolívar
