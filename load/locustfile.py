@@ -2,7 +2,7 @@
 
 Modos (variable de entorno LOCUST_MODE):
   capacity  rampa lineal +USERS_STEP cada STEP_SECONDS (P1.1: buscar p95 > 1 s)
-  staircase perfil escalonado subida / sostenida / bajada de 28 min (P1.2)
+  staircase perfil escalonado subida / sostenida / bajada de 35 min (P1.2)
   steady    carga moderada constante (P2: pruebas de falla)
 
 Ejemplo:
@@ -43,21 +43,21 @@ class CapacityShape(LoadTestShape):
 
 
 class StaircaseShape(LoadTestShape):
-    # (fin_en_segundos, usuarios). Total 28 min.
+    # (fin_en_segundos, usuarios). Total 35 min.
     stages = [
-        (180, 10),     # 0-3   calentamiento
-        (360, 30),     # 3-6   subida
-        (540, 50),     # 6-9   subida
-        (1080, 70),    # 9-18  carga sostenida (debe disparar scale-out)
-        (1260, 30),    # 18-21 bajada
-        (1680, 5),     # 21-28 valle (debe disparar scale-in)
+        (180, 40),     # 0-3   calentamiento
+        (360, 120),    # 3-6   subida
+        (540, 200),    # 6-9   subida
+        (1200, 280),   # 9-20  carga sostenida (debe disparar scale-out)
+        (1380, 120),   # 20-23 bajada
+        (2100, 20),    # 23-35 valle (debe disparar scale-in)
     ]
 
     def tick(self):
         t = self.get_run_time()
         for end, users in self.stages:
             if t < end:
-                return users, 10
+                return users, 20
         return None
 
 
