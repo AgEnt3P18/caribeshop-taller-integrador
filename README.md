@@ -51,15 +51,14 @@ flowchart TB
     U(["👥 Clientes desde Internet"]) -->|HTTP 80| LB["⚖️ Balanceador de carga<br/>IP pública zonal · revisa /health cada 5 s"]
 
     subgraph NET["🔒 Red privada · solo entra tráfico web · salida a Internet bloqueada"]
-        direction LR
         V1["🖥️ Servidor<br/>zona 1"]
         V2["🖥️ Servidor<br/>zona 2"]
         V3["🖥️ Servidor<br/>zona 3"]
     end
 
     LB --> V1 & V2 & V3
-    NET -->|identidad administrada| KV[("🔑 Key Vault<br/>contraseña")]
-    NET -->|métricas y auditoría| MON["📊 Log Analytics<br/>alertas por correo"]
+    V1 & V2 & V3 --> KV[("🔑 Key Vault<br/>guarda la contraseña")]
+    V1 & V2 & V3 -.-> MON["📊 Log Analytics<br/>métricas, auditoría<br/>y alertas por correo"]
 
     classDef ext fill:#EEF5F6,stroke:#0E3B4F,stroke-width:2px,color:#0E3B4F
     classDef srv fill:#0E8C86,stroke:#0B6F6A,color:#FFFFFF
@@ -69,6 +68,9 @@ flowchart TB
     class KV,MON svc
     style NET fill:#FFF4F1,stroke:#FF6B4A,stroke-width:2px,stroke-dasharray:6 4,color:#B91C1C
 ```
+
+> Los servidores leen la contraseña del Key Vault con su **identidad administrada** (sin credenciales
+> en el código) y envían métricas y registros de auditoría a Log Analytics.
 
 | Componente | Configuración clave |
 |---|---|
