@@ -107,7 +107,7 @@ az vmss run-command invoke -g rg-caribeshop -n vmss-caribeshop --instance-id <id
 
 - `informe/`: fuentes LaTeX (`main_overleaf.tex` autocontenido + `figuras/`) y `vista_previa_informe.pdf`.
 - `informe_overleaf.zip`: subir a Overleaf; agregar `logo_utb` a la raíz del proyecto.
-- `presentacion/CaribeShop_video_5min.pptx`: 7 diapositivas para el video de 5 min (incluye el clip de la demo) y `presentacion/guion_video_5min.md` con el guion.
+- `presentacion/CaribeShop_video_5min.pptx`: 7 diapositivas para el video de 5 min (incluye el clip de la demo) y el guion para leer en `presentacion/guion_video_5min.pdf`.
 - `evidencias/video/`: grabación de la demo en vivo (tiempo real y acelerada).
 - `evidencias/`: CSV/HTML de Locust, salidas de CLI, KQL, gráficos y capturas.
 

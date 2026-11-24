@@ -1,51 +1,73 @@
-# Guion del video — CaribeShop en Azure (5 minutos)
+# Guion del video — CaribeShop en Azure
 
-Integrantes: Santiago Payares González · Cristian Matteo Benitez Montes.
-Formato: llamada grupal en Teams, grabada y compartiendo pantalla con `CaribeShop_video_5min.pptx` en modo presentación.
+## 1. Portada — Santiago
 
-| Tiempo | Diapositiva | Habla |
-|---|---|---|
-| 0:00 – 0:15 | 1 · Portada | Santiago |
-| 0:15 – 0:40 | 2 · El reto | Santiago |
-| 0:40 – 1:25 | 3 · Arquitectura | Cristian |
-| 1:25 – 2:10 | 4 · Seguridad y DevSecOps | Cristian |
-| 2:10 – 3:30 | 5 · Demo en vivo (reproducir el video de 78 s) | Santiago (narra sobre el video) |
-| 3:30 – 4:25 | 6 · Resultados medidos | Cristian |
-| 4:25 – 5:00 | 7 · Conclusiones | Santiago |
+Hola a todos. Somos Santiago Payares y Cristian Benítez, y hoy les vamos a mostrar nuestro taller integrador de Infraestructura para TI.
 
-## Texto por diapositiva
+Construimos en Azure la plataforma de una tienda en línea, CaribeShop: segura, que crezca sola cuando llega mucha gente y que siga funcionando aunque algo falle.
 
-### 0:00 – 0:15 · 1 · Portada — Santiago
+## 2. El reto — Santiago
 
-Hola, somos Santiago Payares y Cristian Benítez. Les presentamos nuestro taller integrador de Infraestructura para TI: la plataforma de CaribeShop en Azure, segura, escalable y altamente disponible, desplegada completamente como código.
+Para ponernos en contexto: CaribeShop es una tienda de Cartagena que el año pasado la pasó mal.
 
-### 0:15 – 0:40 · 2 · El reto — Santiago
+Primero se cayó en plena promoción, porque no aguantó tantas visitas. Después se volvió a caer, porque todo dependía de una sola máquina. Y para rematar, una auditoría encontró la contraseña de la base de datos dentro del código y el acceso remoto abierto a cualquiera en Internet.
 
-CaribeShop es una tienda en línea de Cartagena que el año pasado tuvo tres problemas: se cayó por saturación durante una promoción, se cayó otra vez porque tenía una sola máquina virtual, y una auditoría encontró la contraseña de la base de datos en el repositorio y el puerto SSH abierto a Internet. Nuestro objetivo fue resolver los tres: escalar solo, seguir en línea ante fallas y cerrar los huecos de seguridad.
+Entonces nos propusimos tres cosas: que la plataforma escale sola, que sobreviva a las fallas y que cierre esos huecos de seguridad.
 
-### 0:40 – 1:25 · 3 · Arquitectura — Cristian
+## 3. Arquitectura — Cristian
 
-Esta es la arquitectura. Todo se creó con Terraform: 33 recursos en un solo apply, con el estado guardado en una cuenta de almacenamiento remota y nunca en Git. El tráfico entra por una IP pública zonal-redundante a un Load Balancer Standard que revisa la salud de cada instancia en la ruta /health cada 5 segundos. Detrás hay un VM Scale Set repartido en las tres zonas de disponibilidad de East US, con mínimo 2 y máximo 4 instancias, sin IPs públicas y con reparación automática. La subred solo deja entrar el puerto 80 y solo deja salir hacia Key Vault, Monitor y Storage. La aplicación lee su secreto desde Key Vault con una identidad administrada, y todo queda auditado en Log Analytics con alertas por correo.
+Les cuento cómo quedó por dentro.
 
-### 1:25 – 2:10 · 4 · Seguridad y DevSecOps — Cristian
+Todo lo creamos con código, usando Terraform. No hicimos nada a mano en el portal.
 
-No nos quedamos en configurar la seguridad: intentamos romperla. Desde Cloud Shell, con un usuario que sí tiene el rol, leer el secreto falla por el firewall del Key Vault. La identidad de las máquinas solo puede leer un único secreto, y la app solo muestra su hash. Desde dentro de una VM no se puede salir a Internet. Y Azure Policy rechaza crear una tarjeta de red con IP pública o recursos fuera de East US. Además, cada pull request pasa por GitHub Actions: formato, validación y Checkov bloqueante. Un PR que abría SSH a Internet fue rechazado automáticamente, y su corrección pasó en verde.
+Las visitas llegan a una dirección pública y pasan por un balanceador de carga, que cada cinco segundos le pregunta a cada servidor si está bien. Detrás hay un grupo de máquinas repartidas en tres zonas distintas: mínimo dos y máximo cuatro, que se agregan o se quitan solas según la carga.
 
-### 2:10 – 3:30 · 5 · Demo en vivo (reproducir el video de 78 s) — Santiago (narra sobre el video)
+Ninguna de esas máquinas tiene una IP pública, y la red solo deja pasar el tráfico web. La contraseña ya no está en el código: vive en un Key Vault, y la aplicación la consulta con su propia identidad. Y todo queda registrado, con alertas al correo.
 
-Ahora la demostración en vivo. [0:00] Primero la tienda responde a través del balanceador y lee su secreto de Key Vault sin mostrar su valor. [0:13] Lanzamos Locust con 260 usuarios concurrentes; la CPU supera el 70 por ciento y el autoscale empieza a contar su ventana de 5 minutos, que aquí aceleramos. [0:36] Aparece una tercera instancia en otra zona: el scale-out ocurrió solo. [0:43] Ahora provocamos una falla abrupta: eliminamos una instancia con la carga activa. La sonda de salud la saca del balanceador en unos 10 segundos y solo vemos una ráfaga corta de errores. [1:08] La tienda sigue en línea con las instancias restantes, sin intervención manual.
+## 4. Seguridad y DevSecOps — Cristian
 
-### 3:30 – 4:25 · 6 · Resultados medidos — Cristian
+Configurar la seguridad no era suficiente: queríamos comprobarla, así que intentamos romperla.
 
-Estos son los números. Primero medimos la capacidad de una sola instancia: 119 peticiones por segundo antes de que el percentil 95 supere un segundo. Con una prueba escalonada de 35 minutos, el autoscale pasó de 2 a 4 instancias y volvió a 2, con apenas 0,55 por ciento de error. En las pruebas de falla, una instancia marcada como no sana salió del balanceador en 8,2 segundos sin errores adicionales, y al eliminar una instancia de golpe la capacidad mínima se recuperó en 109 segundos. La lección: el autoscale tarda unos 5 minutos en reaccionar, así que para la campaña recomendamos un perfil programado o autoscale predictivo.
+Tratamos de leer la contraseña desde otra red, con un usuario que sí tenía permisos, y el firewall lo bloqueó. Las máquinas solo pueden leer un único secreto, y la aplicación nunca lo muestra. Desde adentro de un servidor intentamos salir a Internet, y tampoco se pudo.
 
-### 4:25 – 5:00 · 7 · Conclusiones — Santiago
+Además, cada cambio en el código pasa por una revisión automática. Cuando propusimos a propósito un cambio que dejaba el acceso remoto expuesto, el sistema lo bloqueó.
 
-En conclusión: la arquitectura tiene un SLA compuesto estimado de 99,97 por ciento, cuesta unos 174 dólares al mes con dos instancias y el autoscale ahorra un 37 por ciento frente a dimensionar fijo para el pico. Todo está en Terraform, sin pasos manuales, y los recursos se destruyeron al terminar. Como siguientes pasos proponemos autoscale predictivo, Application Gateway con WAF y TLS, y una segunda región. Gracias.
+## 5. Demo en vivo — Santiago
 
-## Indicaciones
+*Reproducir el video al empezar a hablar.*
 
-- **Diapositiva 5:** al llegar, hacer clic en el video para reproducirlo (dura 78 s) y narrar encima siguiendo las marcas de tiempo [0:00], [0:13], [0:36], [0:43] y [1:08], que también están en la diapositiva.
-- **Tiempo:** ritmo tranquilo de ~150 palabras/min. Si van largos, recorten la diapositiva 3 (arquitectura), no la demo.
-- **Participación:** los dos integrantes deben verse o escucharse en la grabación de Teams (requisito del taller).
-- Total del guion: ~623 palabras.
+Vamos con la demostración en vivo.
+
+Aquí está la tienda funcionando, y vemos cómo consulta su contraseña sin mostrarla nunca.
+
+Ahora lanzamos una prueba de carga: doscientos sesenta usuarios entrando al mismo tiempo. El procesador pasa del setenta por ciento, y la plataforma espera unos minutos para confirmar que la carga es real. Esa espera la adelantamos en el video.
+
+Y miren: aparece una máquina nueva, en otra zona, sin que nadie la haya creado.
+
+Ahora provocamos una falla a propósito: borramos uno de los servidores mientras la gente sigue comprando. Hay unos segundos de errores, justo lo que tarda el balanceador en darse cuenta, y enseguida deja de mandarle tráfico.
+
+Y la tienda sigue en línea con los servidores que quedan, sin que tuviéramos que tocar nada.
+
+## 6. Resultados medidos — Cristian
+
+Y estos son los números.
+
+Primero medimos cuánto aguanta una sola máquina: unas ciento veinte peticiones por segundo antes de empezar a ponerse lenta.
+
+En una prueba de treinta y cinco minutos, subiendo y bajando la carga, la plataforma pasó de dos a cuatro máquinas y volvió a dos, con apenas medio por ciento de errores.
+
+En las pruebas de falla, cuando un servidor deja de estar sano, sale del balanceador en unos ocho segundos sin que nadie lo note. Y cuando lo borramos de golpe, la capacidad se recupera en menos de dos minutos.
+
+Y aprendimos que el escalado automático tarda unos cinco minutos en reaccionar, así que para una campaña conviene programarlo con anticipación.
+
+## 7. Conclusiones — Santiago
+
+Para cerrar.
+
+La plataforma tiene una disponibilidad estimada del noventa y nueve coma noventa y siete por ciento. Cuesta alrededor de ciento setenta y cuatro dólares al mes, y gracias al escalado automático ahorra cerca de un treinta y siete por ciento frente a dejar todas las máquinas encendidas siempre.
+
+Todo quedó como código, y al terminar eliminamos los recursos.
+
+Como siguiente paso proponemos escalar de forma predictiva y replicar todo en una segunda región.
+
+Muchas gracias.
