@@ -71,19 +71,6 @@ resource "azurerm_network_security_group" "app" {
     destination_address_prefix = "*"
   }
 
-  # Acceso SSH para el equipo de soporte durante la temporada alta
-  security_rule {
-    name                       = "Allow-SSH-Soporte"
-    priority                   = 200
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "22"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-
   security_rule {
     name                       = "Deny-All-Inbound"
     priority                   = 4096
