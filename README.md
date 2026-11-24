@@ -92,6 +92,31 @@ autenticado con Entra ID y auditado en el registro de actividad:
 az vmss run-command invoke -g rg-caribeshop -n vmss-caribeshop --instance-id <id>   --command-id RunShellScript --scripts "journalctl -u caribeshop -n 50"
 ```
 
+## Resultados principales
+
+| Prueba | Resultado |
+|---|---|
+| P1.1 Capacidad de 1 instancia (D2s_v4) | **119 RPS** con p95 < 1 s · 112 RPS con p95 < 500 ms |
+| P1.2 Perfil escalonado (35 min) | 2 → 3 → 4 → 3 → 2 instancias · 207 435 peticiones · **0,55 %** de error |
+| P2.1 Falla lógica (`/health` → 503) | Sale del LB en **8,2 s** · error = línea base · reparación automática a los 11 min |
+| P2.2 Falla abrupta (instancia eliminada) | Errores solo 15 s · capacidad mínima recuperada en **109 s** |
+| P3 Seguridad | Cloud Shell → `ForbiddenByFirewall` · egress bloqueado · `RequestDisallowedByPolicy` |
+| D1 DevSecOps | PR #1 bloqueado por `CKV_AZURE_10`; PR #2 corregido y fusionado |
+
+## Entregables en este repositorio
+
+- `informe/`: fuentes LaTeX (`main_overleaf.tex` autocontenido + `figuras/`) y `vista_previa_informe.pdf`.
+- `informe_overleaf.zip`: subir a Overleaf; agregar `logo_utb` a la raíz del proyecto.
+- `presentacion/CaribeShop_video_5min.pptx`: 7 diapositivas para el video de 5 min (incluye el clip de la demo) y `presentacion/guion_video_5min.md` con el guion.
+- `evidencias/video/`: grabación de la demo en vivo (tiempo real y acelerada).
+- `evidencias/`: CSV/HTML de Locust, salidas de CLI, KQL, gráficos y capturas.
+
+## Estado final
+
+Todos los recursos de la plataforma se destruyeron con `terraform destroy` (33 recursos) y se
+verificó en el portal (`evidencias/cli/destroy_verificacion.txt`). Solo permanece
+`rg-caribeshop-tfstate` (estado remoto) para poder redesplegar con un `terraform apply`.
+
 ## Checklist de la línea base de seguridad
 
 - [x] Estado en backend remoto `azurerm` con `use_azuread_auth` (sin llaves compartidas); `*.tfstate`, `*.tfvars` y `backend.hcl` en `.gitignore`

@@ -1,0 +1,189 @@
+% =================================================================
+\section{Resultados de las pruebas}
+% =================================================================
+Locust se ejecutó desde la red del equipo (Cartagena, RTT $\approx$ 200\,ms hacia \texttt{eastus}).
+El \emph{endpoint} \texttt{/work} consume 40\,ms de CPU por petición (8 de cada 9 peticiones) y
+\texttt{/} sirve la portada. Los CSV e informes HTML están en \texttt{evidencias/}.
+
+\subsection{P1.1 Capacidad de una instancia}
+Con el autoscale fijado en \texttt{min = max = 1} (\texttt{terraform apply -var min\_instances=1
+-var max\_instances=1}) se aumentaron los usuarios de 5 en 5 (y luego de 10 en 10) cada 45\,s hasta 240.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.86\textwidth]{figuras/p1_capacidad.png}
+\caption{Latencia (mediana por escalón de las ventanas de Locust) frente a RPS con una sola instancia.}
+\label{fig:cap}
+\end{figure}
+
+\begin{itemize}
+  \item El \textbf{throughput se satura en $\approx$ 120 RPS} (la CPU llega al 98\,\%): desde 170
+        usuarios agregar usuarios solo aumenta la cola y la latencia.
+  \item \textbf{Capacidad sostenible: 119 RPS con p95 < 1 s} (190 usuarios, p95 = 960\,ms) y
+        \textbf{112 RPS con p95 < 500 ms} (150 usuarios). El p95 pasa 1 s de forma sostenida desde
+        200 usuarios.
+  \item Al 70\,\% de CPU (umbral del autoscale) una instancia atiende $\approx$ 60--65 RPS.
+  \item Los escalones con p95 exactamente 1,2\,s y p50 estable (círculos grises) \textbf{no son
+        saturación}: corresponden al primer RTO de TCP (1\,s) más el RTT (0,2\,s), es decir, SYN
+        perdidos en la red doméstica del cliente. Todos los fallos registrados son
+        \texttt{ConnectTimeoutError} (fase de conexión), ninguno 5xx.
+\end{itemize}
+
+\subsection{P1.2 Escalamiento con perfil escalonado (35 min)}
+Perfil: 40 $\rightarrow$ 120 $\rightarrow$ 200 $\rightarrow$ \textbf{280 usuarios} (11 min)
+$\rightarrow$ 120 $\rightarrow$ 20 (12 min). Autoscale restaurado a 2--4 instancias.
+Total: \textbf{207\,435 peticiones, 1\,143 fallidas (0,55\,\%)}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{figuras/p1_escalonado.png}
+\caption{RPS y usuarios (Locust), latencia, CPU promedio del VMSS e instancias (\texttt{az vmss list-instances} cada 20\,s), alineados en UTC.}
+\label{fig:stair}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\caption{Historial de ejecución del autoscale (\texttt{AutoscaleScaleActionsLog}) y reacción medida.}
+\label{tab:autoscale}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Acción (UTC) & Instancias & Disparador & Reacción \\
+\midrule
+00:09:19 & 2 $\rightarrow$ 3 & CPU > 70\,\% desde 00:04 (promedio 5 min = 80\,\%) & 5 min 19 s; \emph{Succeeded} 00:09:58 \\
+00:14:49 & 3 $\rightarrow$ 4 & CPU aún > 70\,\% tras el cooldown de 5 min & \emph{Succeeded} 00:15:34 \\
+00:26:49 & 4 $\rightarrow$ 3 & CPU < 30\,\% desde 00:20 (ventana 10 min) & 6 min 49 s \\
+00:37:19 & 3 $\rightarrow$ 2 & CPU < 30\,\% tras el cooldown de 10 min & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering\small
+\caption{Rendimiento por fase (medianas de las ventanas de Locust).}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Fase & RPS & p50 (ms) & p95 (ms) & Fallos/s \\
+\midrule
+200 usuarios, 2 instancias & 144 & 240 & 1\,200 & 1,25 \\
+280 usuarios, 2 instancias (antes del scale-out) & 188 & 330 & 1\,200 & 1,48 \\
+280 usuarios, 3 instancias & 206 & 230 & 600 & 1,01 \\
+120 usuarios, 4 instancias & 93 & 220 & 330 & 0,39 \\
+Valle, 20 usuarios & 16 & 210 & 240 & 0,03 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Análisis.} El autoscale se comportó según el diseño: ningún \emph{flapping}, scale-out
+escalonado respetando el cooldown y scale-in conservador. La histéresis se ve en la
+Fig.~\ref{fig:stair}: entre 00:16 y 00:20 la CPU estuvo entre 30 y 70\,\% y no hubo acciones.
+El costo de la reacción reactiva también es visible. Con 280 usuarios y 2 instancias (CPU 80--86\,\%)
+el p50 subió a 330\,ms durante $\sim$\,5 min hasta que entró la 3.ª instancia (p50 230\,ms). La
+4.ª instancia quedó lista a las 00:15:34, \textbf{6 segundos después de que la carga empezara a
+bajar}: para picos cortos el autoscale reactivo llega tarde, lo que motiva la respuesta a la
+pregunta 2.
+
+\subsection{P2 Pruebas de falla}
+Carga moderada con Locust (40 usuarios, $\approx$ 32 RPS) más un monitor propio
+(\texttt{scripts/probe\_monitor.py}) que envía 10 peticiones/s al balanceador y registra estado
+e instancia (cabecera \texttt{X-Instance}) de cada respuesta. T0 se toma del reloj de la VM
+(falla lógica) o del momento de la orden (falla abrupta).
+
+\input{p2}
+
+\subsection{P3 Pruebas de seguridad}
+\begin{enumerate}
+  \item \textbf{Red no autorizada.} Desde Azure Cloud Shell (IP de salida 128.24.198.36), con un
+        usuario que tiene el rol \emph{Key Vault Secrets Officer}, \texttt{az keyvault secret show}
+        devolvió \texttt{Forbidden / ForbiddenByFirewall} (Fig.~\ref{fig:cloudshell}). El rol no basta:
+        la red también debe estar autorizada.
+  \item \textbf{Filtrado de salida.} Ejecutado dentro de una instancia con
+        \texttt{az vmss run-command}: \texttt{example.com}, \texttt{github.com} y \texttt{neverssl.com}
+        $\rightarrow$ \emph{timeout} (\texttt{curl} código 28); Key Vault $\rightarrow$ 401 (alcanzable,
+        requiere token); IMDS $\rightarrow$ 200. El endpoint \texttt{/egress-check} de la app
+        responde \texttt{blocked (URLError)}. El puerto 22 escucha dentro de la VM pero es inalcanzable
+        desde Internet (sin IP pública, sin regla NAT, NSG \texttt{Deny-All-Inbound}).
+  \item \textbf{Violación de la política (S5).} Ver Listado~\ref{lst:policy}.
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figuras/12b_p3_cloudshell_recorte.png}
+\caption{P3.1: lectura del secreto desde Cloud Shell rechazada por el firewall del Key Vault.}
+\label{fig:cloudshell}
+\end{figure}
+
+\begin{lstlisting}[caption={P3.3 / S5: rechazo de Azure Policy (salida abreviada).},label={lst:policy},language={}]
+$ az network nic create -g rg-caribeshop -n nic-prueba-violacion --vnet-name vnet-caribeshop \
+    --subnet snet-app --public-ip-address pip-prueba-violacion
+ERROR: (RequestDisallowedByPolicy) Resource 'nic-prueba-violacion' was disallowed by policy.
+  policyAssignment: "CaribeShop - Denegar NICs con IP publica"
+  policyDefinition: "Network interfaces should not have public IPs" (83a86a26-...)
+$ az network nsg create -g rg-caribeshop -n nsg-prueba-westus -l westus
+ERROR: (RequestDisallowedByPolicy) Resource 'nsg-prueba-westus' was disallowed by policy.
+  policyAssignment: "CaribeShop - Solo region eastus"  policyDefinition: "Allowed locations"
+\end{lstlisting}
+
+\subsection{DevSecOps (D1): pull request bloqueado y corregido}
+El PR \#1 agregó una regla \texttt{Allow-SSH-Soporte} (22/tcp desde \texttt{*}) al NSG. Los
+trabajos \texttt{fmt}/\texttt{validate} pasaron, pero \textbf{Checkov falló} con
+\texttt{CKV\_AZURE\_10} en \texttt{infra/network.tf\#L43} y el PR se cerró sin fusionar. El PR \#2
+revierte la regla y documenta el soporte con \texttt{az vmss run-command} (plano de control con
+Entra ID y auditado); su pipeline pasó en verde y se fusionó (Fig.~\ref{fig:d1}).
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.49\textwidth}
+\includegraphics[width=\linewidth]{figuras/18_d1_checkov_bloquea.png}
+\caption{PR \#1: Checkov bloquea (\texttt{CKV\_AZURE\_10}).}
+\end{subfigure}\hfill
+\begin{subfigure}{0.49\textwidth}
+\includegraphics[width=\linewidth]{figuras/20_d1_actions.png}
+\caption{Historial de ejecuciones del workflow.}
+\end{subfigure}
+\caption{Pipeline DevSecOps en GitHub Actions.}
+\label{fig:d1}
+\end{figure}
+
+\subsection{Observabilidad: S6 (KQL) y E5 (alertas)}
+\begin{lstlisting}[caption={S6: consulta KQL sobre la auditoría del Key Vault y resultado.},label={lst:kql},language={}]
+AzureDiagnostics
+| where ResourceProvider == 'MICROSOFT.KEYVAULT' and OperationName == 'SecretGet'
+| extend Identidad = iff(isnotempty(identity_claim_xms_mirid_s),
+         strcat('MI ', tostring(split(identity_claim_xms_mirid_s,'/')[-1])), 'operador (usuario)')
+| summarize Lecturas=count(), Primera=min(TimeGenerated) by Identidad,
+         Tipo=identity_claim_idtyp_s, Resultado=ResultSignature, Red=isAddressAuthorized_b
+-----------------------------------------------------------------------------------------
+Identidad            Tipo  Lecturas  Resultado  Red   Cliente
+MI vmss-caribeshop   app   5         OK         True  Python-urllib/3.12
+operador (usuario)   user  1         OK         True  Terraform (azurerm 4.81)
+\end{lstlisting}
+
+La identidad que lee el secreto es la del VMSS (\texttt{xms\_mirid =
+.../virtualMachineScaleSets/vmss-caribeshop}, \texttt{oid} = \texttt{vmss\_principal\_id}), desde la
+subred autorizada. Las alertas de E5 se dispararon durante las pruebas y quedaron registradas
+(Tabla~\ref{tab:alertas}); el grupo de acciones envió correo y las notificaciones del autoscale
+llegaron al buzón (Fig.~\ref{fig:alerta}).
+
+\begin{table}[H]
+\centering\small
+\caption{E5: historial de alertas (API \texttt{Microsoft.AlertsManagement}).}
+\label{tab:alertas}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Regla & Sev. & Disparada (UTC) & Resuelta (UTC) \\
+\midrule
+\texttt{alert-health-probe-below-100} & 2 & 23:14:28 & 23:30:29 \\
+\texttt{alert-vmss-cpu-sustained} & 3 & 23:53:11 & 00:00:32 \\
+\texttt{alert-health-probe-below-100} & 2 & 23:57:27 & 00:05:29 \\
+\texttt{alert-health-probe-below-100} & 2 & 00:12:29 & 00:26:41 \\
+\texttt{alert-health-probe-below-100} & 2 & 00:42:33 (P2.1) & 01:06:46 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figuras/14_e5_correo_autoscale.png}
+\caption{Correo recibido de Azure Monitor: el autoscale cambia la capacidad de 3 a 4 instancias.}
+\label{fig:alerta}
+\end{figure}

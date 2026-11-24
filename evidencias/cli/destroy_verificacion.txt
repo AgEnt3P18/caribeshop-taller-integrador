@@ -1,0 +1,14 @@
+## Verificacion post-destroy (2026-11-24T01:34:29Z)
+## Grupos de recursos en la suscripcion:
+Nombre                 Region
+---------------------  --------
+rg-caribeshop-tfstate  eastus
+NetworkWatcherRG       eastus
+
+## rg-caribeshop existe?
+false
+
+## Key Vaults en soft-delete (purge protection, se eliminan solos en 7 dias, sin costo):
+Nombre       Purga
+-----------  -------------------------
+kv-cs-s0pya  2026-12-01T01:33:15+00:00

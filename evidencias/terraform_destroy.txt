@@ -1,0 +1,1301 @@
+Acquiring state lock. This may take a few moments...
+random_string.suffix: Refreshing state... [id=s0pya]
+random_password.db: Refreshing state... [id=none]
+tls_private_key.admin: Refreshing state... [id=d1985659fe4195ca462b94d517b566281418430f]
+time_offset.secret_expiry: Refreshing state... [id=2026-11-23T23:07:48Z]
+data.azurerm_client_config.current: Reading...
+azurerm_resource_group.main: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop]
+data.azurerm_client_config.current: Read complete after 0s [id=Y2xpZW50Q29uZmlncy9jbGllbnRJZD0wNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDY7b2JqZWN0SWQ9ODllZjk4YzQtZmM5ZS00MDFjLTk4YTEtNThkYjFlZDU1M2UyO3N1YnNjcmlwdGlvbklkPTdmZjJlYzA3LTBjOTktNDk1ZC05ZmJmLTg2MzdlMzczM2I4Zjt0ZW5hbnRJZD03YTY1ZjI1YS1iNmI4LTQ4MzMtOWQ0NC0wYTY1NDFhY2MyZmQ=]
+azurerm_resource_group_policy_assignment.deny_nic_public_ip: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Authorization/policyAssignments/deny-nic-public-ip]
+azurerm_public_ip.lb: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/publicIPAddresses/pip-lb-caribeshop]
+azurerm_log_analytics_workspace.main: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.OperationalInsights/workspaces/log-caribeshop]
+azurerm_resource_group_policy_assignment.allowed_locations: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Authorization/policyAssignments/allowed-locations]
+azurerm_monitor_action_group.ops: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/actionGroups/ag-caribeshop-ops]
+azurerm_virtual_network.main: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/virtualNetworks/vnet-caribeshop]
+azurerm_network_security_group.app: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/networkSecurityGroups/nsg-app]
+azurerm_subnet.app: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/virtualNetworks/vnet-caribeshop/subnets/snet-app]
+azurerm_lb.main: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop]
+azurerm_subnet_network_security_group_association.app: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/virtualNetworks/vnet-caribeshop/subnets/snet-app]
+azurerm_key_vault.main: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya]
+azurerm_storage_account.app: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Storage/storageAccounts/stcsapps0pya]
+azurerm_lb_backend_address_pool.app: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/backendAddressPools/be-app]
+azurerm_lb_probe.health: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/probes/probe-health]
+azurerm_monitor_diagnostic_setting.lb: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop|diag-lb-to-law]
+azurerm_monitor_metric_alert.probe: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/metricAlerts/alert-health-probe-below-100]
+azurerm_lb_outbound_rule.egress: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/outboundRules/outbound-egress]
+azurerm_lb_rule.http: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/loadBalancingRules/rule-http]
+azurerm_role_assignment.operator_kv: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya/providers/Microsoft.Authorization/roleAssignments/67834d87-ef1e-1a47-24df-2c46dd641782]
+azurerm_monitor_diagnostic_setting.kv: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya|diag-kv-to-law]
+azurerm_linux_virtual_machine_scale_set.app: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-caribeshop]
+azurerm_monitor_metric_alert.cpu: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/metricAlerts/alert-vmss-cpu-sustained]
+azurerm_monitor_autoscale_setting.app: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/autoScaleSettings/autoscale-caribeshop]
+azurerm_monitor_diagnostic_setting.autoscale: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/autoScaleSettings/autoscale-caribeshop|diag-autoscale-to-law]
+time_sleep.rbac_propagation: Refreshing state... [id=2026-11-23T23:13:22Z]
+azurerm_key_vault_secret.db: Refreshing state... [id=https://kv-cs-s0pya.vault.azure.net/secrets/db-password/1cd9fe67c405475da05496b450069d90]
+azurerm_role_assignment.vmss_secret_reader: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya/secrets/db-password/providers/Microsoft.Authorization/roleAssignments/32017e7c-018a-1746-7c6a-e221fa88748c]
+azurerm_storage_container.assets: Refreshing state... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Storage/storageAccounts/stcsapps0pya/blobServices/default/containers/assets]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  - destroy
+
+Terraform will perform the following actions:
+
+  # azurerm_key_vault.main will be destroyed
+  - resource "azurerm_key_vault" "main" {
+      - access_policy                   = [] -> null
+      - enable_rbac_authorization       = true -> null
+      - enabled_for_deployment          = false -> null
+      - enabled_for_disk_encryption     = false -> null
+      - enabled_for_template_deployment = false -> null
+      - id                              = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya" -> null
+      - location                        = "eastus" -> null
+      - name                            = "kv-cs-s0pya" -> null
+      - public_network_access_enabled   = true -> null
+      - purge_protection_enabled        = true -> null
+      - rbac_authorization_enabled      = true -> null
+      - resource_group_name             = "rg-caribeshop" -> null
+      - sku_name                        = "standard" -> null
+      - soft_delete_retention_days      = 7 -> null
+      - tags                            = {
+          - "curso"      = "infraestructura-ti-utb"
+          - "entorno"    = "taller"
+          - "gestionado" = "terraform"
+          - "proyecto"   = "caribeshop"
+        } -> null
+      - tenant_id                       = "7a65f25a-b6b8-4833-9d44-0a6541acc2fd" -> null
+      - vault_uri                       = "https://kv-cs-s0pya.vault.azure.net/" -> null
+
+      - network_acls {
+          - bypass                     = "AzureServices" -> null
+          - default_action             = "Deny" -> null
+          - ip_rules                   = [
+              - "<IP-operador-2>/28",
+              - "<IP-operador-1>/32",
+            ] -> null
+          - virtual_network_subnet_ids = [
+              - "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/virtualNetworks/vnet-caribeshop/subnets/snet-app",
+            ] -> null
+        }
+    }
+
+  # azurerm_key_vault_secret.db will be destroyed
+  - resource "azurerm_key_vault_secret" "db" {
+      - content_type            = "text/plain" -> null
+      - expiration_date         = "2027-02-21T23:07:48Z" -> null
+      - id                      = "https://kv-cs-s0pya.vault.azure.net/secrets/db-password/1cd9fe67c405475da05496b450069d90" -> null
+      - key_vault_id            = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya" -> null
+      - name                    = "db-password" -> null
+      - resource_id             = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya/secrets/db-password/versions/1cd9fe67c405475da05496b450069d90" -> null
+      - resource_versionless_id = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya/secrets/db-password" -> null
+      - tags                    = {
+          - "curso"      = "infraestructura-ti-utb"
+          - "entorno"    = "taller"
+          - "gestionado" = "terraform"
+          - "proyecto"   = "caribeshop"
+        } -> null
+      - value                   = (sensitive value) -> null
+      - value_wo                = (write-only attribute) -> null
+      - value_wo_version        = 0 -> null
+      - version                 = "1cd9fe67c405475da05496b450069d90" -> null
+      - versionless_id          = "https://kv-cs-s0pya.vault.azure.net/secrets/db-password" -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_lb.main will be destroyed
+  - resource "azurerm_lb" "main" {
+      - id                   = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop" -> null
+      - location             = "eastus" -> null
+      - name                 = "lb-caribeshop" -> null
+      - private_ip_addresses = [] -> null
+      - resource_group_name  = "rg-caribeshop" -> null
+      - sku                  = "Standard" -> null
+      - sku_tier             = "Regional" -> null
+      - tags                 = {
+          - "curso"      = "infraestructura-ti-utb"
+          - "entorno"    = "taller"
+          - "gestionado" = "terraform"
+          - "proyecto"   = "caribeshop"
+        } -> null
+        # (2 unchanged attributes hidden)
+
+      - frontend_ip_configuration {
+          - id                                                 = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/frontendIPConfigurations/fe-public" -> null
+          - inbound_nat_rules                                  = [] -> null
+          - load_balancer_rules                                = [
+              - "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/loadBalancingRules/rule-http",
+            ] -> null
+          - name                                               = "fe-public" -> null
+          - outbound_rules                                     = [
+              - "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/outboundRules/outbound-egress",
+            ] -> null
+          - private_ip_address_allocation                      = "Dynamic" -> null
+          - public_ip_address_id                               = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/publicIPAddresses/pip-lb-caribeshop" -> null
+          - zones                                              = [] -> null
+            # (5 unchanged attributes hidden)
+        }
+    }
+
+  # azurerm_lb_backend_address_pool.app will be destroyed
+  - resource "azurerm_lb_backend_address_pool" "app" {
+      - backend_ip_configurations = [
+          - "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-caribeshop/virtualMachines/6/networkInterfaces/nic-app/ipConfigurations/ipcfg",
+          - "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-caribeshop/virtualMachines/7/networkInterfaces/nic-app/ipConfigurations/ipcfg",
+          - "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-caribeshop/virtualMachines/8/networkInterfaces/nic-app/ipConfigurations/ipcfg",
+        ] -> null
+      - id                        = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/backendAddressPools/be-app" -> null
+      - inbound_nat_rules         = [] -> null
+      - load_balancing_rules      = [
+          - "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/loadBalancingRules/rule-http",
+        ] -> null
+      - loadbalancer_id           = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop" -> null
+      - name                      = "be-app" -> null
+      - outbound_rules            = [
+          - "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/outboundRules/outbound-egress",
+        ] -> null
+        # (2 unchanged attributes hidden)
+    }
+
+  # azurerm_lb_outbound_rule.egress will be destroyed
+  - resource "azurerm_lb_outbound_rule" "egress" {
+      - allocated_outbound_ports = 1024 -> null
+      - backend_address_pool_id  = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/backendAddressPools/be-app" -> null
+      - enable_tcp_reset         = false -> null
+      - id                       = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/outboundRules/outbound-egress" -> null
+      - idle_timeout_in_minutes  = 4 -> null
+      - loadbalancer_id          = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop" -> null
+      - name                     = "outbound-egress" -> null
+      - protocol                 = "All" -> null
+      - tcp_reset_enabled        = false -> null
+
+      - frontend_ip_configuration {
+          - id   = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/frontendIPConfigurations/fe-public" -> null
+          - name = "fe-public" -> null
+        }
+    }
+
+  # azurerm_lb_probe.health will be destroyed
+  - resource "azurerm_lb_probe" "health" {
+      - id                  = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/probes/probe-health" -> null
+      - interval_in_seconds = 5 -> null
+      - load_balancer_rules = [
+          - "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/loadBalancingRules/rule-http",
+        ] -> null
+      - loadbalancer_id     = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop" -> null
+      - name                = "probe-health" -> null
+      - number_of_probes    = 2 -> null
+      - port                = 80 -> null
+      - probe_threshold     = 2 -> null
+      - protocol            = "Http" -> null
+      - request_path        = "/health" -> null
+    }
+
+  # azurerm_lb_rule.http will be destroyed
+  - resource "azurerm_lb_rule" "http" {
+      - backend_address_pool_ids       = [
+          - "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/backendAddressPools/be-app",
+        ] -> null
+      - backend_port                   = 80 -> null
+      - disable_outbound_snat          = true -> null
+      - enable_floating_ip             = false -> null
+      - enable_tcp_reset               = false -> null
+      - floating_ip_enabled            = false -> null
+      - frontend_ip_configuration_id   = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/frontendIPConfigurations/fe-public" -> null
+      - frontend_ip_configuration_name = "fe-public" -> null
+      - frontend_port                  = 80 -> null
+      - id                             = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/loadBalancingRules/rule-http" -> null
+      - idle_timeout_in_minutes        = 4 -> null
+      - load_distribution              = "Default" -> null
+      - loadbalancer_id                = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop" -> null
+      - name                           = "rule-http" -> null
+      - probe_id                       = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/probes/probe-health" -> null
+      - protocol                       = "Tcp" -> null
+      - tcp_reset_enabled              = false -> null
+    }
+
+  # azurerm_linux_virtual_machine_scale_set.app will be destroyed
+  - resource "azurerm_linux_virtual_machine_scale_set" "app" {
+      - admin_username                                    = "azureops" -> null
+      - computer_name_prefix                              = "vmss-caribeshop" -> null
+      - custom_data                                       = (sensitive value) -> null
+      - disable_password_authentication                   = true -> null
+      - do_not_run_extensions_on_overprovisioned_machines = false -> null
+      - encryption_at_host_enabled                        = false -> null
+      - extension_operations_enabled                      = true -> null
+      - extensions_time_budget                            = "PT1H30M" -> null
+      - health_probe_id                                   = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/probes/probe-health" -> null
+      - id                                                = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-caribeshop" -> null
+      - instances                                         = 3 -> null
+      - location                                          = "eastus" -> null
+      - max_bid_price                                     = -1 -> null
+      - name                                              = "vmss-caribeshop" -> null
+      - overprovision                                     = false -> null
+      - platform_fault_domain_count                       = 5 -> null
+      - priority                                          = "Regular" -> null
+      - provision_vm_agent                                = true -> null
+      - resilient_vm_creation_enabled                     = false -> null
+      - resilient_vm_deletion_enabled                     = false -> null
+      - resource_group_name                               = "rg-caribeshop" -> null
+      - secure_boot_enabled                               = true -> null
+      - single_placement_group                            = true -> null
+      - sku                                               = "Standard_D2s_v4" -> null
+      - tags                                              = {
+          - "curso"      = "infraestructura-ti-utb"
+          - "entorno"    = "taller"
+          - "gestionado" = "terraform"
+          - "proyecto"   = "caribeshop"
+        } -> null
+      - unique_id                                         = "c36cab94-c74d-4300-b755-00e501a5d76f" -> null
+      - upgrade_mode                                      = "Manual" -> null
+      - vtpm_enabled                                      = true -> null
+      - zone_balance                                      = true -> null
+      - zones                                             = [
+          - "1",
+          - "2",
+          - "3",
+        ] -> null
+        # (6 unchanged attributes hidden)
+
+      - admin_ssh_key {
+          - public_key = <<-EOT
+                ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDJ65smFNEM8/QZyTN5Y5O6Gb22Wz1aMrFHojM854kEP9SJgdGHzVhhBdjKmLSSdSAPe7SjDTibb+kZeoemHmy7ylwTaYOrrgb2cBmWACM5uYYqaJlyk7S3gapYIMy6QFqQuvJrX4p3P5cFqBZI1chc0Q6AGHOVwPeAH7tTquCqx6mQMVafkRf2ZEcJSp1SxsCLRTHbkaxZ5z5lHxhljioSPZ4F2Ob+5D3GR5LfTE39G5RpR3x0hhXvAbgP1jLdIMlGTO3PX6eXXNhP5n9bDb0qvG5rx42+pfMyKon0rWI753/UhC4Y4NIWiDEvDCPvOzd8le1R6h8+ay/uY/gW8nwx84tsAnAzJOsxdenKFpamVAlwmDuDbeFJhSRDID96R1lJoWN6EGOJ1V7rc14Xq/Y2S+6WaNKioXxOpcZbZm8Xzu6R7a/yYnUBD/iBA8+9JdvLMCAL+L4KeyGrm6TIicOS/xryQgqtTs3XlEv5oMziWlVynP+AqrtXQiu57x4mB8F8pDKHxRe8C8MYPKuPCMKsQ9G30rAHZwT050CJrkjhyJjRZkRbdbV4TWbeb03ouRSz6ICpPC0JtURKg1bV3sZivdhlT4QqZIeu42QQaXtx2AdLjEHI5O3QcjNaE9bm9zumf1oSVmLhu48tomY8nOjkk/1JBYDz52dGv7HqIpvntw==
+            EOT -> null
+          - username   = "azureops" -> null
+        }
+
+      - automatic_instance_repair {
+          - action       = "Replace" -> null
+          - enabled      = true -> null
+          - grace_period = "PT10M" -> null
+        }
+
+      - boot_diagnostics {
+            # (1 unchanged attribute hidden)
+        }
+
+      - identity {
+          - identity_ids = [] -> null
+          - principal_id = "95df5c1c-3391-42db-be9e-5a322a5acad3" -> null
+          - tenant_id    = "7a65f25a-b6b8-4833-9d44-0a6541acc2fd" -> null
+          - type         = "SystemAssigned" -> null
+        }
+
+      - network_interface {
+          - dns_servers                   = [] -> null
+          - enable_accelerated_networking = false -> null
+          - enable_ip_forwarding          = false -> null
+          - name                          = "nic-app" -> null
+          - network_security_group_id     = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/networkSecurityGroups/nsg-app" -> null
+          - primary                       = true -> null
+            # (2 unchanged attributes hidden)
+
+          - ip_configuration {
+              - application_gateway_backend_address_pool_ids = [] -> null
+              - application_security_group_ids               = [] -> null
+              - load_balancer_backend_address_pool_ids       = [
+                  - "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/backendAddressPools/be-app",
+                ] -> null
+              - load_balancer_inbound_nat_rules_ids          = [] -> null
+              - name                                         = "ipcfg" -> null
+              - primary                                      = true -> null
+              - subnet_id                                    = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/virtualNetworks/vnet-caribeshop/subnets/snet-app" -> null
+              - version                                      = "IPv4" -> null
+            }
+        }
+
+      - os_disk {
+          - caching                          = "ReadWrite" -> null
+          - disk_size_gb                     = 30 -> null
+          - storage_account_type             = "StandardSSD_LRS" -> null
+          - write_accelerator_enabled        = false -> null
+            # (3 unchanged attributes hidden)
+        }
+
+      - source_image_reference {
+          - offer     = "ubuntu-24_04-lts" -> null
+          - publisher = "Canonical" -> null
+          - sku       = "server" -> null
+          - version   = "latest" -> null
+        }
+    }
+
+  # azurerm_log_analytics_workspace.main will be destroyed
+  - resource "azurerm_log_analytics_workspace" "main" {
+      - allow_resource_only_permissions         = true -> null
+      - cmk_for_query_forced                    = false -> null
+      - daily_quota_gb                          = -1 -> null
+      - id                                      = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.OperationalInsights/workspaces/log-caribeshop" -> null
+      - immediate_data_purge_on_30_days_enabled = false -> null
+      - internet_ingestion_enabled              = true -> null
+      - internet_query_enabled                  = true -> null
+      - local_authentication_disabled           = false -> null
+      - local_authentication_enabled            = true -> null
+      - location                                = "eastus" -> null
+      - name                                    = "log-caribeshop" -> null
+      - primary_shared_key                      = (sensitive value) -> null
+      - resource_group_name                     = "rg-caribeshop" -> null
+      - retention_in_days                       = 30 -> null
+      - secondary_shared_key                    = (sensitive value) -> null
+      - sku                                     = "PerGB2018" -> null
+      - tags                                    = {
+          - "curso"      = "infraestructura-ti-utb"
+          - "entorno"    = "taller"
+          - "gestionado" = "terraform"
+          - "proyecto"   = "caribeshop"
+        } -> null
+      - workspace_id                            = "b74cc2d6-dd28-44cc-b858-e214c654accb" -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_monitor_action_group.ops will be destroyed
+  - resource "azurerm_monitor_action_group" "ops" {
+      - enabled             = true -> null
+      - id                  = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/actionGroups/ag-caribeshop-ops" -> null
+      - location            = "global" -> null
+      - name                = "ag-caribeshop-ops" -> null
+      - resource_group_name = "rg-caribeshop" -> null
+      - short_name          = "csops" -> null
+      - tags                = {
+          - "curso"      = "infraestructura-ti-utb"
+          - "entorno"    = "taller"
+          - "gestionado" = "terraform"
+          - "proyecto"   = "caribeshop"
+        } -> null
+
+      - email_receiver {
+          - email_address           = "Infraestructura2026TI@outlook.com" -> null
+          - name                    = "operador" -> null
+          - use_common_alert_schema = true -> null
+        }
+    }
+
+  # azurerm_monitor_autoscale_setting.app will be destroyed
+  - resource "azurerm_monitor_autoscale_setting" "app" {
+      - enabled             = true -> null
+      - id                  = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/autoScaleSettings/autoscale-caribeshop" -> null
+      - location            = "eastus" -> null
+      - name                = "autoscale-caribeshop" -> null
+      - resource_group_name = "rg-caribeshop" -> null
+      - tags                = {
+          - "curso"      = "infraestructura-ti-utb"
+          - "entorno"    = "taller"
+          - "gestionado" = "terraform"
+          - "proyecto"   = "caribeshop"
+        } -> null
+      - target_resource_id  = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-caribeshop" -> null
+
+      - notification {
+          - email {
+              - custom_emails                         = [
+                  - "Infraestructura2026TI@outlook.com",
+                ] -> null
+              - send_to_subscription_administrator    = false -> null
+              - send_to_subscription_co_administrator = false -> null
+            }
+        }
+
+      - profile {
+          - name = "default" -> null
+
+          - capacity {
+              - default = 2 -> null
+              - maximum = 4 -> null
+              - minimum = 2 -> null
+            }
+
+          - rule {
+              - metric_trigger {
+                  - divide_by_instance_count = false -> null
+                  - metric_name              = "Percentage CPU" -> null
+                  - metric_resource_id       = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-caribeshop" -> null
+                  - operator                 = "GreaterThan" -> null
+                  - statistic                = "Average" -> null
+                  - threshold                = 70 -> null
+                  - time_aggregation         = "Average" -> null
+                  - time_grain               = "PT1M" -> null
+                  - time_window              = "PT5M" -> null
+                    # (1 unchanged attribute hidden)
+                }
+              - scale_action {
+                  - cooldown  = "PT5M" -> null
+                  - direction = "Increase" -> null
+                  - type      = "ChangeCount" -> null
+                  - value     = 1 -> null
+                }
+            }
+          - rule {
+              - metric_trigger {
+                  - divide_by_instance_count = false -> null
+                  - metric_name              = "Percentage CPU" -> null
+                  - metric_resource_id       = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-caribeshop" -> null
+                  - operator                 = "LessThan" -> null
+                  - statistic                = "Average" -> null
+                  - threshold                = 30 -> null
+                  - time_aggregation         = "Average" -> null
+                  - time_grain               = "PT1M" -> null
+                  - time_window              = "PT10M" -> null
+                    # (1 unchanged attribute hidden)
+                }
+              - scale_action {
+                  - cooldown  = "PT10M" -> null
+                  - direction = "Decrease" -> null
+                  - type      = "ChangeCount" -> null
+                  - value     = 1 -> null
+                }
+            }
+        }
+    }
+
+  # azurerm_monitor_diagnostic_setting.autoscale will be destroyed
+  - resource "azurerm_monitor_diagnostic_setting" "autoscale" {
+      - id                             = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/autoScaleSettings/autoscale-caribeshop|diag-autoscale-to-law" -> null
+      - log_analytics_workspace_id     = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.OperationalInsights/workspaces/log-caribeshop" -> null
+      - name                           = "diag-autoscale-to-law" -> null
+      - target_resource_id             = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/autoScaleSettings/autoscale-caribeshop" -> null
+        # (3 unchanged attributes hidden)
+
+      - enabled_log {
+          - category       = "AutoscaleEvaluations" -> null
+            # (1 unchanged attribute hidden)
+
+          - retention_policy {
+              - days    = 0 -> null
+              - enabled = false -> null
+            }
+        }
+      - enabled_log {
+          - category       = "AutoscaleScaleActions" -> null
+            # (1 unchanged attribute hidden)
+
+          - retention_policy {
+              - days    = 0 -> null
+              - enabled = false -> null
+            }
+        }
+
+      - enabled_metric {
+          - category = "AllMetrics" -> null
+        }
+
+      - metric {
+          - category = "AllMetrics" -> null
+          - enabled  = true -> null
+
+          - retention_policy {
+              - days    = 0 -> null
+              - enabled = false -> null
+            }
+        }
+    }
+
+  # azurerm_monitor_diagnostic_setting.kv will be destroyed
+  - resource "azurerm_monitor_diagnostic_setting" "kv" {
+      - id                             = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya|diag-kv-to-law" -> null
+      - log_analytics_destination_type = "AzureDiagnostics" -> null
+      - log_analytics_workspace_id     = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.OperationalInsights/workspaces/log-caribeshop" -> null
+      - name                           = "diag-kv-to-law" -> null
+      - target_resource_id             = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya" -> null
+        # (2 unchanged attributes hidden)
+
+      - enabled_log {
+          - category       = "AuditEvent" -> null
+            # (1 unchanged attribute hidden)
+
+          - retention_policy {
+              - days    = 0 -> null
+              - enabled = false -> null
+            }
+        }
+
+      - enabled_metric {
+          - category = "AllMetrics" -> null
+        }
+
+      - metric {
+          - category = "AllMetrics" -> null
+          - enabled  = true -> null
+
+          - retention_policy {
+              - days    = 0 -> null
+              - enabled = false -> null
+            }
+        }
+    }
+
+  # azurerm_monitor_diagnostic_setting.lb will be destroyed
+  - resource "azurerm_monitor_diagnostic_setting" "lb" {
+      - id                             = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop|diag-lb-to-law" -> null
+      - log_analytics_workspace_id     = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.OperationalInsights/workspaces/log-caribeshop" -> null
+      - name                           = "diag-lb-to-law" -> null
+      - target_resource_id             = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop" -> null
+        # (3 unchanged attributes hidden)
+
+      - enabled_metric {
+          - category = "AllMetrics" -> null
+        }
+
+      - metric {
+          - category = "AllMetrics" -> null
+          - enabled  = true -> null
+
+          - retention_policy {
+              - days    = 0 -> null
+              - enabled = false -> null
+            }
+        }
+    }
+
+  # azurerm_monitor_metric_alert.cpu will be destroyed
+  - resource "azurerm_monitor_metric_alert" "cpu" {
+      - auto_mitigate            = true -> null
+      - description              = "CPU promedio del VMSS > 80 % durante 15 minutos." -> null
+      - enabled                  = true -> null
+      - frequency                = "PT1M" -> null
+      - id                       = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/metricAlerts/alert-vmss-cpu-sustained" -> null
+      - name                     = "alert-vmss-cpu-sustained" -> null
+      - resource_group_name      = "rg-caribeshop" -> null
+      - scopes                   = [
+          - "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-caribeshop",
+        ] -> null
+      - severity                 = 3 -> null
+      - tags                     = {
+          - "curso"      = "infraestructura-ti-utb"
+          - "entorno"    = "taller"
+          - "gestionado" = "terraform"
+          - "proyecto"   = "caribeshop"
+        } -> null
+      - window_size              = "PT15M" -> null
+        # (2 unchanged attributes hidden)
+
+      - action {
+          - action_group_id    = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/actionGroups/ag-caribeshop-ops" -> null
+          - webhook_properties = {} -> null
+        }
+
+      - criteria {
+          - aggregation            = "Average" -> null
+          - metric_name            = "Percentage CPU" -> null
+          - metric_namespace       = "Microsoft.Compute/virtualMachineScaleSets" -> null
+          - operator               = "GreaterThan" -> null
+          - skip_metric_validation = false -> null
+          - threshold              = 80 -> null
+        }
+    }
+
+  # azurerm_monitor_metric_alert.probe will be destroyed
+  - resource "azurerm_monitor_metric_alert" "probe" {
+      - auto_mitigate            = true -> null
+      - description              = "El estado de la sonda /health del balanceador cayo por debajo de 100 %." -> null
+      - enabled                  = true -> null
+      - frequency                = "PT1M" -> null
+      - id                       = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/metricAlerts/alert-health-probe-below-100" -> null
+      - name                     = "alert-health-probe-below-100" -> null
+      - resource_group_name      = "rg-caribeshop" -> null
+      - scopes                   = [
+          - "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop",
+        ] -> null
+      - severity                 = 2 -> null
+      - tags                     = {
+          - "curso"      = "infraestructura-ti-utb"
+          - "entorno"    = "taller"
+          - "gestionado" = "terraform"
+          - "proyecto"   = "caribeshop"
+        } -> null
+      - window_size              = "PT5M" -> null
+        # (2 unchanged attributes hidden)
+
+      - action {
+          - action_group_id    = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/actionGroups/ag-caribeshop-ops" -> null
+          - webhook_properties = {} -> null
+        }
+
+      - criteria {
+          - aggregation            = "Average" -> null
+          - metric_name            = "DipAvailability" -> null
+          - metric_namespace       = "Microsoft.Network/loadBalancers" -> null
+          - operator               = "LessThan" -> null
+          - skip_metric_validation = false -> null
+          - threshold              = 100 -> null
+        }
+    }
+
+  # azurerm_network_security_group.app will be destroyed
+  - resource "azurerm_network_security_group" "app" {
+      - id                  = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/networkSecurityGroups/nsg-app" -> null
+      - location            = "eastus" -> null
+      - name                = "nsg-app" -> null
+      - resource_group_name = "rg-caribeshop" -> null
+      - security_rule       = [
+          - {
+              - access                                     = "Allow"
+              - destination_address_prefix                 = "*"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "80"
+              - destination_port_ranges                    = []
+              - direction                                  = "Inbound"
+              - name                                       = "Allow-LB-Probes"
+              - priority                                   = 110
+              - protocol                                   = "Tcp"
+              - source_address_prefix                      = "AzureLoadBalancer"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          - {
+              - access                                     = "Allow"
+              - destination_address_prefix                 = "AzureKeyVault"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "443"
+              - destination_port_ranges                    = []
+              - direction                                  = "Outbound"
+              - name                                       = "Allow-KeyVault-Out"
+              - priority                                   = 100
+              - protocol                                   = "Tcp"
+              - source_address_prefix                      = "VirtualNetwork"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          - {
+              - access                                     = "Allow"
+              - destination_address_prefix                 = "AzureMonitor"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "443"
+              - destination_port_ranges                    = []
+              - direction                                  = "Outbound"
+              - name                                       = "Allow-AzureMonitor-Out"
+              - priority                                   = 110
+              - protocol                                   = "Tcp"
+              - source_address_prefix                      = "VirtualNetwork"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          - {
+              - access                                     = "Allow"
+              - destination_address_prefix                 = "Storage.eastus"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "443"
+              - destination_port_ranges                    = []
+              - direction                                  = "Outbound"
+              - name                                       = "Allow-Storage-Out"
+              - priority                                   = 120
+              - protocol                                   = "Tcp"
+              - source_address_prefix                      = "VirtualNetwork"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          - {
+              - access                                     = "Allow"
+              - destination_address_prefix                 = "VirtualNetwork"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "80"
+              - destination_port_ranges                    = []
+              - direction                                  = "Inbound"
+              - name                                       = "Allow-HTTP-Internet"
+              - priority                                   = 100
+              - protocol                                   = "Tcp"
+              - source_address_prefix                      = "Internet"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          - {
+              - access                                     = "Deny"
+              - destination_address_prefix                 = "*"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "*"
+              - destination_port_ranges                    = []
+              - direction                                  = "Inbound"
+              - name                                       = "Deny-All-Inbound"
+              - priority                                   = 4096
+              - protocol                                   = "*"
+              - source_address_prefix                      = "*"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+          - {
+              - access                                     = "Deny"
+              - destination_address_prefix                 = "Internet"
+              - destination_address_prefixes               = []
+              - destination_application_security_group_ids = []
+              - destination_port_range                     = "*"
+              - destination_port_ranges                    = []
+              - direction                                  = "Outbound"
+              - name                                       = "Deny-Internet-Out"
+              - priority                                   = 4000
+              - protocol                                   = "*"
+              - source_address_prefix                      = "*"
+              - source_address_prefixes                    = []
+              - source_application_security_group_ids      = []
+              - source_port_range                          = "*"
+              - source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+        ] -> null
+      - tags                = {
+          - "curso"      = "infraestructura-ti-utb"
+          - "entorno"    = "taller"
+          - "gestionado" = "terraform"
+          - "proyecto"   = "caribeshop"
+        } -> null
+    }
+
+  # azurerm_public_ip.lb will be destroyed
+  - resource "azurerm_public_ip" "lb" {
+      - allocation_method       = "Static" -> null
+      - ddos_protection_mode    = "VirtualNetworkInherited" -> null
+      - domain_name_label       = "caribeshop-s0pya" -> null
+      - fqdn                    = "caribeshop-s0pya.eastus.cloudapp.azure.com" -> null
+      - id                      = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/publicIPAddresses/pip-lb-caribeshop" -> null
+      - idle_timeout_in_minutes = 4 -> null
+      - ip_address              = "4.255.37.228" -> null
+      - ip_tags                 = {} -> null
+      - ip_version              = "IPv4" -> null
+      - location                = "eastus" -> null
+      - name                    = "pip-lb-caribeshop" -> null
+      - resource_group_name     = "rg-caribeshop" -> null
+      - sku                     = "Standard" -> null
+      - sku_tier                = "Regional" -> null
+      - tags                    = {
+          - "curso"      = "infraestructura-ti-utb"
+          - "entorno"    = "taller"
+          - "gestionado" = "terraform"
+          - "proyecto"   = "caribeshop"
+        } -> null
+      - zones                   = [
+          - "1",
+          - "2",
+          - "3",
+        ] -> null
+        # (3 unchanged attributes hidden)
+    }
+
+  # azurerm_resource_group.main will be destroyed
+  - resource "azurerm_resource_group" "main" {
+      - id         = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop" -> null
+      - location   = "eastus" -> null
+      - name       = "rg-caribeshop" -> null
+      - tags       = {
+          - "curso"      = "infraestructura-ti-utb"
+          - "entorno"    = "taller"
+          - "gestionado" = "terraform"
+          - "proyecto"   = "caribeshop"
+        } -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_resource_group_policy_assignment.allowed_locations will be destroyed
+  - resource "azurerm_resource_group_policy_assignment" "allowed_locations" {
+      - display_name         = "CaribeShop - Solo region eastus" -> null
+      - enforce              = true -> null
+      - id                   = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Authorization/policyAssignments/allowed-locations" -> null
+      - metadata             = jsonencode(
+            {
+              - createdBy = "89ef98c4-fc9e-401c-98a1-58db1ed553e2"
+              - createdOn = "2026-11-23T23:08:29.1306894Z"
+              - updatedBy = null
+              - updatedOn = null
+            }
+        ) -> null
+      - name                 = "allowed-locations" -> null
+      - not_scopes           = [] -> null
+      - parameters           = jsonencode(
+            {
+              - listOfAllowedLocations = {
+                  - value = [
+                      - "eastus",
+                    ]
+                }
+            }
+        ) -> null
+      - policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/e56962a6-4747-49cd-b67b-bf8b01975c4c" -> null
+      - resource_group_id    = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop" -> null
+        # (2 unchanged attributes hidden)
+    }
+
+  # azurerm_resource_group_policy_assignment.deny_nic_public_ip will be destroyed
+  - resource "azurerm_resource_group_policy_assignment" "deny_nic_public_ip" {
+      - display_name         = "CaribeShop - Denegar NICs con IP publica" -> null
+      - enforce              = true -> null
+      - id                   = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Authorization/policyAssignments/deny-nic-public-ip" -> null
+      - metadata             = jsonencode(
+            {
+              - createdBy = "89ef98c4-fc9e-401c-98a1-58db1ed553e2"
+              - createdOn = "2026-11-23T23:08:29.3206923Z"
+              - updatedBy = null
+              - updatedOn = null
+            }
+        ) -> null
+      - name                 = "deny-nic-public-ip" -> null
+      - not_scopes           = [] -> null
+      - policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/83a86a26-fd1f-447c-b59d-e51f44264114" -> null
+      - resource_group_id    = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop" -> null
+        # (3 unchanged attributes hidden)
+    }
+
+  # azurerm_role_assignment.operator_kv will be destroyed
+  - resource "azurerm_role_assignment" "operator_kv" {
+      - id                                     = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya/providers/Microsoft.Authorization/roleAssignments/67834d87-ef1e-1a47-24df-2c46dd641782" -> null
+      - name                                   = "67834d87-ef1e-1a47-24df-2c46dd641782" -> null
+      - principal_id                           = "89ef98c4-fc9e-401c-98a1-58db1ed553e2" -> null
+      - principal_type                         = "User" -> null
+      - role_definition_id                     = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/providers/Microsoft.Authorization/roleDefinitions/b86a8fe4-44ce-4948-aee5-eccb2c155cd7" -> null
+      - role_definition_name                   = "Key Vault Secrets Officer" -> null
+      - scope                                  = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya" -> null
+        # (4 unchanged attributes hidden)
+    }
+
+  # azurerm_role_assignment.vmss_secret_reader will be destroyed
+  - resource "azurerm_role_assignment" "vmss_secret_reader" {
+      - id                                     = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya/secrets/db-password/providers/Microsoft.Authorization/roleAssignments/32017e7c-018a-1746-7c6a-e221fa88748c" -> null
+      - name                                   = "32017e7c-018a-1746-7c6a-e221fa88748c" -> null
+      - principal_id                           = "95df5c1c-3391-42db-be9e-5a322a5acad3" -> null
+      - principal_type                         = "ServicePrincipal" -> null
+      - role_definition_id                     = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/providers/Microsoft.Authorization/roleDefinitions/4633458b-17de-408a-b874-0445c86b69e6" -> null
+      - role_definition_name                   = "Key Vault Secrets User" -> null
+      - scope                                  = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya/secrets/db-password" -> null
+        # (4 unchanged attributes hidden)
+    }
+
+  # azurerm_storage_account.app will be destroyed
+  - resource "azurerm_storage_account" "app" {
+      - access_tier                        = "Hot" -> null
+      - account_kind                       = "StorageV2" -> null
+      - account_replication_type           = "LRS" -> null
+      - account_tier                       = "Standard" -> null
+      - allow_nested_items_to_be_public    = false -> null
+      - cross_tenant_replication_enabled   = false -> null
+      - default_to_oauth_authentication    = true -> null
+      - dns_endpoint_type                  = "Standard" -> null
+      - https_traffic_only_enabled         = true -> null
+      - id                                 = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Storage/storageAccounts/stcsapps0pya" -> null
+      - infrastructure_encryption_enabled  = false -> null
+      - is_hns_enabled                     = false -> null
+      - large_file_share_enabled           = false -> null
+      - local_user_enabled                 = true -> null
+      - location                           = "eastus" -> null
+      - min_tls_version                    = "TLS1_2" -> null
+      - name                               = "stcsapps0pya" -> null
+      - nfsv3_enabled                      = false -> null
+      - primary_access_key                 = (sensitive value) -> null
+      - primary_blob_connection_string     = (sensitive value) -> null
+      - primary_blob_endpoint              = "https://stcsapps0pya.blob.core.windows.net/" -> null
+      - primary_blob_host                  = "stcsapps0pya.blob.core.windows.net" -> null
+      - primary_connection_string          = (sensitive value) -> null
+      - primary_dfs_endpoint               = "https://stcsapps0pya.dfs.core.windows.net/" -> null
+      - primary_dfs_host                   = "stcsapps0pya.dfs.core.windows.net" -> null
+      - primary_file_endpoint              = "https://stcsapps0pya.file.core.windows.net/" -> null
+      - primary_file_host                  = "stcsapps0pya.file.core.windows.net" -> null
+      - primary_location                   = "eastus" -> null
+      - primary_queue_endpoint             = "https://stcsapps0pya.queue.core.windows.net/" -> null
+      - primary_queue_host                 = "stcsapps0pya.queue.core.windows.net" -> null
+      - primary_table_endpoint             = "https://stcsapps0pya.table.core.windows.net/" -> null
+      - primary_table_host                 = "stcsapps0pya.table.core.windows.net" -> null
+      - primary_web_endpoint               = "https://stcsapps0pya.z13.web.core.windows.net/" -> null
+      - primary_web_host                   = "stcsapps0pya.z13.web.core.windows.net" -> null
+      - public_network_access_enabled      = true -> null
+      - queue_encryption_key_type          = "Service" -> null
+      - resource_group_name                = "rg-caribeshop" -> null
+      - secondary_access_key               = (sensitive value) -> null
+      - secondary_connection_string        = (sensitive value) -> null
+      - sftp_enabled                       = false -> null
+      - shared_access_key_enabled          = false -> null
+      - table_encryption_key_type          = "Service" -> null
+      - tags                               = {
+          - "curso"      = "infraestructura-ti-utb"
+          - "entorno"    = "taller"
+          - "gestionado" = "terraform"
+          - "proyecto"   = "caribeshop"
+        } -> null
+        # (57 unchanged attributes hidden)
+
+      - blob_properties {
+          - change_feed_enabled           = false -> null
+          - change_feed_retention_in_days = 0 -> null
+          - last_access_time_enabled      = false -> null
+          - versioning_enabled            = false -> null
+            # (1 unchanged attribute hidden)
+
+          - container_delete_retention_policy {
+              - days = 7 -> null
+            }
+
+          - delete_retention_policy {
+              - days                     = 7 -> null
+              - permanent_delete_enabled = false -> null
+            }
+        }
+
+      - network_rules {
+          - bypass                     = [
+              - "AzureServices",
+            ] -> null
+          - default_action             = "Deny" -> null
+          - ip_rules                   = [
+              - "<IP-operador-2>/28",
+              - "<IP-operador-1>",
+            ] -> null
+          - virtual_network_subnet_ids = [
+              - "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/virtualNetworks/vnet-caribeshop/subnets/snet-app",
+            ] -> null
+        }
+
+      - queue_properties {
+          - hour_metrics {
+              - enabled               = false -> null
+              - include_apis          = false -> null
+              - retention_policy_days = 0 -> null
+              - version               = "1.0" -> null
+            }
+          - logging {
+              - delete                = false -> null
+              - read                  = false -> null
+              - retention_policy_days = 0 -> null
+              - version               = "1.0" -> null
+              - write                 = false -> null
+            }
+          - minute_metrics {
+              - enabled               = false -> null
+              - include_apis          = false -> null
+              - retention_policy_days = 0 -> null
+              - version               = "1.0" -> null
+            }
+        }
+
+      - sas_policy {
+          - expiration_action = "Log" -> null
+          - expiration_period = "01.00:00:00" -> null
+        }
+
+      - share_properties {
+          - retention_policy {
+              - days = 7 -> null
+            }
+        }
+    }
+
+  # azurerm_storage_container.assets will be destroyed
+  - resource "azurerm_storage_container" "assets" {
+      - container_access_type             = "private" -> null
+      - default_encryption_scope          = "$account-encryption-key" -> null
+      - encryption_scope_override_enabled = true -> null
+      - has_immutability_policy           = false -> null
+      - has_legal_hold                    = false -> null
+      - id                                = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Storage/storageAccounts/stcsapps0pya/blobServices/default/containers/assets" -> null
+      - metadata                          = {} -> null
+      - name                              = "assets" -> null
+      - resource_manager_id               = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Storage/storageAccounts/stcsapps0pya/blobServices/default/containers/assets" -> null
+      - storage_account_id                = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Storage/storageAccounts/stcsapps0pya" -> null
+      - url                               = "https://stcsapps0pya.blob.core.windows.net/assets" -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_subnet.app will be destroyed
+  - resource "azurerm_subnet" "app" {
+      - address_prefixes                              = [
+          - "10.20.1.0/24",
+        ] -> null
+      - default_outbound_access_enabled               = false -> null
+      - id                                            = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/virtualNetworks/vnet-caribeshop/subnets/snet-app" -> null
+      - name                                          = "snet-app" -> null
+      - private_endpoint_network_policies             = "Disabled" -> null
+      - private_link_service_network_policies_enabled = true -> null
+      - resource_group_name                           = "rg-caribeshop" -> null
+      - service_endpoint_policy_ids                   = [] -> null
+      - service_endpoints                             = [
+          - "Microsoft.KeyVault",
+          - "Microsoft.Storage",
+        ] -> null
+      - virtual_network_name                          = "vnet-caribeshop" -> null
+        # (1 unchanged attribute hidden)
+    }
+
+  # azurerm_subnet_network_security_group_association.app will be destroyed
+  - resource "azurerm_subnet_network_security_group_association" "app" {
+      - id                        = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/virtualNetworks/vnet-caribeshop/subnets/snet-app" -> null
+      - network_security_group_id = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/networkSecurityGroups/nsg-app" -> null
+      - subnet_id                 = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/virtualNetworks/vnet-caribeshop/subnets/snet-app" -> null
+    }
+
+  # azurerm_virtual_network.main will be destroyed
+  - resource "azurerm_virtual_network" "main" {
+      - address_space                  = [
+          - "10.20.0.0/16",
+        ] -> null
+      - dns_servers                    = [] -> null
+      - flow_timeout_in_minutes        = 0 -> null
+      - guid                           = "01d2eaa1-5a86-4246-ba51-37f5d9476c0b" -> null
+      - id                             = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/virtualNetworks/vnet-caribeshop" -> null
+      - location                       = "eastus" -> null
+      - name                           = "vnet-caribeshop" -> null
+      - private_endpoint_vnet_policies = "Disabled" -> null
+      - resource_group_name            = "rg-caribeshop" -> null
+      - subnet                         = [
+          - {
+              - address_prefixes                              = [
+                  - "10.20.1.0/24",
+                ]
+              - default_outbound_access_enabled               = false
+              - delegation                                    = []
+              - id                                            = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/virtualNetworks/vnet-caribeshop/subnets/snet-app"
+              - name                                          = "snet-app"
+              - private_endpoint_network_policies             = "Disabled"
+              - private_link_service_network_policies_enabled = true
+              - security_group                                = "/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/networkSecurityGroups/nsg-app"
+              - service_endpoint_policy_ids                   = []
+              - service_endpoints                             = [
+                  - "Microsoft.KeyVault",
+                  - "Microsoft.Storage",
+                ]
+                # (1 unchanged attribute hidden)
+            },
+        ] -> null
+      - tags                           = {
+          - "curso"      = "infraestructura-ti-utb"
+          - "entorno"    = "taller"
+          - "gestionado" = "terraform"
+          - "proyecto"   = "caribeshop"
+        } -> null
+        # (2 unchanged attributes hidden)
+    }
+
+  # random_password.db will be destroyed
+  - resource "random_password" "db" {
+      - bcrypt_hash      = (sensitive value) -> null
+      - id               = "none" -> null
+      - length           = 32 -> null
+      - lower            = true -> null
+      - min_lower        = 0 -> null
+      - min_numeric      = 0 -> null
+      - min_special      = 0 -> null
+      - min_upper        = 0 -> null
+      - number           = true -> null
+      - numeric          = true -> null
+      - override_special = "!#%*-_=+" -> null
+      - result           = (sensitive value) -> null
+      - special          = true -> null
+      - upper            = true -> null
+    }
+
+  # random_string.suffix will be destroyed
+  - resource "random_string" "suffix" {
+      - id          = "s0pya" -> null
+      - length      = 5 -> null
+      - lower       = true -> null
+      - min_lower   = 0 -> null
+      - min_numeric = 0 -> null
+      - min_special = 0 -> null
+      - min_upper   = 0 -> null
+      - number      = true -> null
+      - numeric     = true -> null
+      - result      = "s0pya" -> null
+      - special     = false -> null
+      - upper       = false -> null
+    }
+
+  # time_offset.secret_expiry will be destroyed
+  - resource "time_offset" "secret_expiry" {
+      - base_rfc3339 = "2026-11-23T23:07:48Z" -> null
+      - day          = 21 -> null
+      - hour         = 23 -> null
+      - id           = "2026-11-23T23:07:48Z" -> null
+      - minute       = 7 -> null
+      - month        = 2 -> null
+      - offset_days  = 90 -> null
+      - rfc3339      = "2027-02-21T23:07:48Z" -> null
+      - second       = 48 -> null
+      - unix         = 1803251268 -> null
+      - year         = 2027 -> null
+    }
+
+  # time_sleep.rbac_propagation will be destroyed
+  - resource "time_sleep" "rbac_propagation" {
+      - create_duration = "90s" -> null
+      - id              = "2026-11-23T23:13:22Z" -> null
+    }
+
+  # tls_private_key.admin will be destroyed
+  - resource "tls_private_key" "admin" {
+      - algorithm                     = "RSA" -> null
+      - ecdsa_curve                   = "P224" -> null
+      - id                            = "d1985659fe4195ca462b94d517b566281418430f" -> null
+      - private_key_openssh           = (sensitive value) -> null
+      - private_key_pem               = (sensitive value) -> null
+      - private_key_pem_pkcs8         = (sensitive value) -> null
+      - public_key_fingerprint_md5    = "ab:f2:ca:ab:e1:fd:d0:9b:4e:cc:ee:0e:c2:ae:8e:e9" -> null
+      - public_key_fingerprint_sha256 = "SHA256:AZ5OhgFjt6VsgfbSPrO8EzhdpGzTlmqu7UyQxxb71Xw" -> null
+      - public_key_openssh            = <<-EOT
+            ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDJ65smFNEM8/QZyTN5Y5O6Gb22Wz1aMrFHojM854kEP9SJgdGHzVhhBdjKmLSSdSAPe7SjDTibb+kZeoemHmy7ylwTaYOrrgb2cBmWACM5uYYqaJlyk7S3gapYIMy6QFqQuvJrX4p3P5cFqBZI1chc0Q6AGHOVwPeAH7tTquCqx6mQMVafkRf2ZEcJSp1SxsCLRTHbkaxZ5z5lHxhljioSPZ4F2Ob+5D3GR5LfTE39G5RpR3x0hhXvAbgP1jLdIMlGTO3PX6eXXNhP5n9bDb0qvG5rx42+pfMyKon0rWI753/UhC4Y4NIWiDEvDCPvOzd8le1R6h8+ay/uY/gW8nwx84tsAnAzJOsxdenKFpamVAlwmDuDbeFJhSRDID96R1lJoWN6EGOJ1V7rc14Xq/Y2S+6WaNKioXxOpcZbZm8Xzu6R7a/yYnUBD/iBA8+9JdvLMCAL+L4KeyGrm6TIicOS/xryQgqtTs3XlEv5oMziWlVynP+AqrtXQiu57x4mB8F8pDKHxRe8C8MYPKuPCMKsQ9G30rAHZwT050CJrkjhyJjRZkRbdbV4TWbeb03ouRSz6ICpPC0JtURKg1bV3sZivdhlT4QqZIeu42QQaXtx2AdLjEHI5O3QcjNaE9bm9zumf1oSVmLhu48tomY8nOjkk/1JBYDz52dGv7HqIpvntw==
+        EOT -> null
+      - public_key_pem                = <<-EOT
+            -----BEGIN PUBLIC KEY-----
+            MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAyeubJhTRDPP0GckzeWOT
+            uhm9tls9WjKxR6IzPOeJBD/UiYHRh81YYQXYypi0knUgD3u0ow04m2/pGXqHph5s
+            u8pcE2mDq64G9nAZlgAjObmGKmiZcpO0t4GqWCDMukBakLrya1+Kdz+XBagWSNXI
+            XNEOgBhzlcD3gB+7U6rgqsepkDFWn5EX9mRHCUqdUsbAi0Ux25GsWec+ZR8YZY4q
+            Ej2eBdjm/uQ9xkeS30xN/RuUaUd8dIYV7wG4D9Yy3SDJRkztz1+nl1zYT+Z/Ww29
+            Krxua8eNvqXzMiqJ9K1iO+d/1IQuGODSFogxLwwj7zs3fJXtUeofPmsv7mP4FvJ8
+            MfOLbAJwMyTrMXXpyhaWplQJcJg7g23hSYUkQyA/ekdZSaFjehBjidVe63NeF6v2
+            NkvulmjSoqF8TqXGW2ZvF87uke2v8mJ1AQ/4gQPPvSXbyzAgC/i+Cnshq5ukyInD
+            kv8a8kIKrU7N15RL+aDM4lpVcpz/gKq7V0Irue8eJgfBfKQyh8UXvAvDGDyrjwjC
+            rEPRt9KwB2cE9OdAia5I4ciY0WZEW3W1eE1m3m9N6LkUs+iAqTwtCbVESoNW1d7G
+            Yr3YZU+EKmSHruNkEGl7cdgHS4xByOTt0HIzWhPW5vc7pn9aElZi4buPLaJmPJzo
+            5JP9SQWA8+dnRr+x6iKb57cCAwEAAQ==
+            -----END PUBLIC KEY-----
+        EOT -> null
+      - rsa_bits                      = 4096 -> null
+    }
+
+Plan: 0 to add, 0 to change, 33 to destroy.
+
+Changes to Outputs:
+  - app_url                    = "http://caribeshop-s0pya.eastus.cloudapp.azure.com" -> null
+  - autoscale_name             = "autoscale-caribeshop" -> null
+  - key_vault_name             = "kv-cs-s0pya" -> null
+  - lb_public_ip               = "4.255.37.228" -> null
+  - log_analytics_workspace_id = "b74cc2d6-dd28-44cc-b858-e214c654accb" -> null
+  - resource_group             = "rg-caribeshop" -> null
+  - vmss_name                  = "vmss-caribeshop" -> null
+  - vmss_principal_id          = "95df5c1c-3391-42db-be9e-5a322a5acad3" -> null
+azurerm_storage_container.assets: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Storage/storageAccounts/stcsapps0pya/blobServices/default/containers/assets]
+azurerm_resource_group_policy_assignment.deny_nic_public_ip: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Authorization/policyAssignments/deny-nic-public-ip]
+azurerm_resource_group_policy_assignment.allowed_locations: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Authorization/policyAssignments/allowed-locations]
+azurerm_monitor_diagnostic_setting.lb: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop|diag-lb-to-law]
+azurerm_role_assignment.vmss_secret_reader: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya/secrets/db-password/providers/Microsoft.Authorization/roleAssignments/32017e7c-018a-1746-7c6a-e221fa88748c]
+azurerm_monitor_diagnostic_setting.kv: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya|diag-kv-to-law]
+azurerm_monitor_metric_alert.cpu: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/metricAlerts/alert-vmss-cpu-sustained]
+azurerm_monitor_metric_alert.probe: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/metricAlerts/alert-health-probe-below-100]
+azurerm_monitor_diagnostic_setting.autoscale: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/autoScaleSettings/autoscale-caribeshop|diag-autoscale-to-law]
+azurerm_storage_container.assets: Destruction complete after 1s
+azurerm_storage_account.app: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Storage/storageAccounts/stcsapps0pya]
+azurerm_monitor_metric_alert.cpu: Destruction complete after 1s
+azurerm_monitor_metric_alert.probe: Destruction complete after 2s
+azurerm_monitor_action_group.ops: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/actionGroups/ag-caribeshop-ops]
+azurerm_role_assignment.vmss_secret_reader: Destruction complete after 2s
+azurerm_key_vault_secret.db: Destroying... [id=https://kv-cs-s0pya.vault.azure.net/secrets/db-password/1cd9fe67c405475da05496b450069d90]
+azurerm_monitor_action_group.ops: Destruction complete after 1s
+azurerm_storage_account.app: Destruction complete after 2s
+azurerm_resource_group_policy_assignment.allowed_locations: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...on/policyAssignments/allowed-locations, 00m10s elapsed]
+azurerm_resource_group_policy_assignment.deny_nic_public_ip: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...n/policyAssignments/deny-nic-public-ip, 00m10s elapsed]
+azurerm_monitor_diagnostic_setting.kv: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...ault/vaults/kv-cs-s0pya|diag-kv-to-law, 00m10s elapsed]
+azurerm_monitor_diagnostic_setting.lb: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...Balancers/lb-caribeshop|diag-lb-to-law, 00m10s elapsed]
+azurerm_monitor_diagnostic_setting.autoscale: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...scale-caribeshop|diag-autoscale-to-law, 00m10s elapsed]
+azurerm_key_vault_secret.db: Still destroying... [id=https://kv-cs-s0pya.vault.azure.net/sec...sword/1cd9fe67c405475da05496b450069d90, 00m10s elapsed]
+azurerm_monitor_diagnostic_setting.kv: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...ault/vaults/kv-cs-s0pya|diag-kv-to-law, 00m20s elapsed]
+azurerm_monitor_diagnostic_setting.lb: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...Balancers/lb-caribeshop|diag-lb-to-law, 00m20s elapsed]
+azurerm_resource_group_policy_assignment.deny_nic_public_ip: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...n/policyAssignments/deny-nic-public-ip, 00m20s elapsed]
+azurerm_resource_group_policy_assignment.allowed_locations: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...on/policyAssignments/allowed-locations, 00m20s elapsed]
+azurerm_monitor_diagnostic_setting.autoscale: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...scale-caribeshop|diag-autoscale-to-law, 00m20s elapsed]
+azurerm_key_vault_secret.db: Destruction complete after 19s
+time_sleep.rbac_propagation: Destroying... [id=2026-11-23T23:13:22Z]
+time_offset.secret_expiry: Destroying... [id=2026-11-23T23:07:48Z]
+random_password.db: Destroying... [id=none]
+time_sleep.rbac_propagation: Destruction complete after 0s
+time_offset.secret_expiry: Destruction complete after 0s
+random_password.db: Destruction complete after 0s
+azurerm_role_assignment.operator_kv: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya/providers/Microsoft.Authorization/roleAssignments/67834d87-ef1e-1a47-24df-2c46dd641782]
+azurerm_role_assignment.operator_kv: Destruction complete after 3s
+azurerm_monitor_diagnostic_setting.kv: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...ault/vaults/kv-cs-s0pya|diag-kv-to-law, 00m30s elapsed]
+azurerm_resource_group_policy_assignment.deny_nic_public_ip: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...n/policyAssignments/deny-nic-public-ip, 00m30s elapsed]
+azurerm_resource_group_policy_assignment.allowed_locations: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...on/policyAssignments/allowed-locations, 00m30s elapsed]
+azurerm_monitor_diagnostic_setting.lb: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...Balancers/lb-caribeshop|diag-lb-to-law, 00m30s elapsed]
+azurerm_monitor_diagnostic_setting.autoscale: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...scale-caribeshop|diag-autoscale-to-law, 00m30s elapsed]
+azurerm_monitor_diagnostic_setting.lb: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...Balancers/lb-caribeshop|diag-lb-to-law, 00m40s elapsed]
+azurerm_resource_group_policy_assignment.deny_nic_public_ip: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...n/policyAssignments/deny-nic-public-ip, 00m40s elapsed]
+azurerm_resource_group_policy_assignment.allowed_locations: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...on/policyAssignments/allowed-locations, 00m40s elapsed]
+azurerm_monitor_diagnostic_setting.kv: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...ault/vaults/kv-cs-s0pya|diag-kv-to-law, 00m40s elapsed]
+azurerm_monitor_diagnostic_setting.autoscale: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...scale-caribeshop|diag-autoscale-to-law, 00m40s elapsed]
+azurerm_monitor_diagnostic_setting.kv: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...ault/vaults/kv-cs-s0pya|diag-kv-to-law, 00m50s elapsed]
+azurerm_resource_group_policy_assignment.allowed_locations: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...on/policyAssignments/allowed-locations, 00m50s elapsed]
+azurerm_monitor_diagnostic_setting.lb: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...Balancers/lb-caribeshop|diag-lb-to-law, 00m50s elapsed]
+azurerm_resource_group_policy_assignment.deny_nic_public_ip: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...n/policyAssignments/deny-nic-public-ip, 00m50s elapsed]
+azurerm_monitor_diagnostic_setting.autoscale: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...scale-caribeshop|diag-autoscale-to-law, 00m50s elapsed]
+azurerm_monitor_diagnostic_setting.autoscale: Destruction complete after 54s
+azurerm_monitor_diagnostic_setting.kv: Destruction complete after 56s
+azurerm_monitor_autoscale_setting.app: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Insights/autoScaleSettings/autoscale-caribeshop]
+azurerm_monitor_autoscale_setting.app: Destruction complete after 0s
+azurerm_linux_virtual_machine_scale_set.app: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-caribeshop]
+azurerm_monitor_diagnostic_setting.lb: Destruction complete after 57s
+azurerm_log_analytics_workspace.main: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.OperationalInsights/workspaces/log-caribeshop]
+azurerm_resource_group_policy_assignment.deny_nic_public_ip: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...n/policyAssignments/deny-nic-public-ip, 01m00s elapsed]
+azurerm_resource_group_policy_assignment.allowed_locations: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...on/policyAssignments/allowed-locations, 01m00s elapsed]
+azurerm_linux_virtual_machine_scale_set.app: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...irtualMachineScaleSets/vmss-caribeshop, 00m10s elapsed]
+azurerm_log_analytics_workspace.main: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...onalInsights/workspaces/log-caribeshop, 00m10s elapsed]
+azurerm_log_analytics_workspace.main: Destruction complete after 11s
+azurerm_resource_group_policy_assignment.deny_nic_public_ip: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...n/policyAssignments/deny-nic-public-ip, 01m10s elapsed]
+azurerm_resource_group_policy_assignment.allowed_locations: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...on/policyAssignments/allowed-locations, 01m10s elapsed]
+azurerm_linux_virtual_machine_scale_set.app: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...irtualMachineScaleSets/vmss-caribeshop, 00m20s elapsed]
+azurerm_resource_group_policy_assignment.deny_nic_public_ip: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...n/policyAssignments/deny-nic-public-ip, 01m20s elapsed]
+azurerm_resource_group_policy_assignment.allowed_locations: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...on/policyAssignments/allowed-locations, 01m20s elapsed]
+azurerm_linux_virtual_machine_scale_set.app: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...irtualMachineScaleSets/vmss-caribeshop, 00m30s elapsed]
+azurerm_resource_group_policy_assignment.allowed_locations: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...on/policyAssignments/allowed-locations, 01m30s elapsed]
+azurerm_resource_group_policy_assignment.deny_nic_public_ip: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...n/policyAssignments/deny-nic-public-ip, 01m30s elapsed]
+azurerm_linux_virtual_machine_scale_set.app: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...irtualMachineScaleSets/vmss-caribeshop, 00m40s elapsed]
+azurerm_resource_group_policy_assignment.allowed_locations: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...on/policyAssignments/allowed-locations, 01m40s elapsed]
+azurerm_resource_group_policy_assignment.deny_nic_public_ip: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...n/policyAssignments/deny-nic-public-ip, 01m40s elapsed]
+azurerm_linux_virtual_machine_scale_set.app: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...irtualMachineScaleSets/vmss-caribeshop, 00m50s elapsed]
+azurerm_resource_group_policy_assignment.allowed_locations: Destruction complete after 1m47s
+azurerm_resource_group_policy_assignment.deny_nic_public_ip: Destruction complete after 1m48s
+azurerm_linux_virtual_machine_scale_set.app: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...irtualMachineScaleSets/vmss-caribeshop, 01m00s elapsed]
+azurerm_linux_virtual_machine_scale_set.app: Destruction complete after 1m4s
+azurerm_subnet_network_security_group_association.app: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/virtualNetworks/vnet-caribeshop/subnets/snet-app]
+azurerm_lb_outbound_rule.egress: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/outboundRules/outbound-egress]
+azurerm_lb_rule.http: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/loadBalancingRules/rule-http]
+azurerm_key_vault.main: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.KeyVault/vaults/kv-cs-s0pya]
+tls_private_key.admin: Destroying... [id=d1985659fe4195ca462b94d517b566281418430f]
+tls_private_key.admin: Destruction complete after 0s
+azurerm_key_vault.main: Destruction complete after 3s
+azurerm_lb_outbound_rule.egress: Destruction complete after 5s
+azurerm_subnet_network_security_group_association.app: Destruction complete after 8s
+azurerm_subnet.app: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/virtualNetworks/vnet-caribeshop/subnets/snet-app]
+azurerm_network_security_group.app: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/networkSecurityGroups/nsg-app]
+azurerm_lb_rule.http: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...aribeshop/loadBalancingRules/rule-http, 00m10s elapsed]
+azurerm_lb_rule.http: Destruction complete after 11s
+azurerm_lb_backend_address_pool.app: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/backendAddressPools/be-app]
+azurerm_lb_probe.health: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop/probes/probe-health]
+azurerm_subnet.app: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...works/vnet-caribeshop/subnets/snet-app, 00m10s elapsed]
+azurerm_network_security_group.app: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-....Network/networkSecurityGroups/nsg-app, 00m10s elapsed]
+azurerm_network_security_group.app: Destruction complete after 11s
+azurerm_subnet.app: Destruction complete after 11s
+azurerm_virtual_network.main: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/virtualNetworks/vnet-caribeshop]
+azurerm_lb_backend_address_pool.app: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...-caribeshop/backendAddressPools/be-app, 00m10s elapsed]
+azurerm_lb_probe.health: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...cers/lb-caribeshop/probes/probe-health, 00m10s elapsed]
+azurerm_lb_backend_address_pool.app: Destruction complete after 11s
+azurerm_lb_probe.health: Destruction complete after 17s
+azurerm_lb.main: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/loadBalancers/lb-caribeshop]
+azurerm_virtual_network.main: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...etwork/virtualNetworks/vnet-caribeshop, 00m10s elapsed]
+azurerm_virtual_network.main: Destruction complete after 12s
+azurerm_lb.main: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...ft.Network/loadBalancers/lb-caribeshop, 00m10s elapsed]
+azurerm_lb.main: Destruction complete after 11s
+azurerm_public_ip.lb: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop/providers/Microsoft.Network/publicIPAddresses/pip-lb-caribeshop]
+azurerm_public_ip.lb: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-...rk/publicIPAddresses/pip-lb-caribeshop, 00m10s elapsed]
+azurerm_public_ip.lb: Destruction complete after 11s
+azurerm_resource_group.main: Destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop]
+random_string.suffix: Destroying... [id=s0pya]
+random_string.suffix: Destruction complete after 0s
+azurerm_resource_group.main: Still destroying... [id=/subscriptions/7ff2ec07-0c99-495d-9fbf-8637e3733b8f/resourceGroups/rg-caribeshop, 00m10s elapsed]
+azurerm_resource_group.main: Destruction complete after 12s
+Releasing state lock. This may take a few moments...
+
+Destroy complete! Resources: 33 destroyed.

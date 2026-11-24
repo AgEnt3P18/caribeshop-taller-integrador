@@ -1,0 +1,158 @@
+% =================================================================
+\section{Introducción y alcance}
+% =================================================================
+CaribeShop, tienda en línea con sede en Cartagena, sufrió el año pasado dos caídas
+(saturación durante una promoción y falla de su única máquina virtual) y una auditoría
+encontró la contraseña de la base de datos en el repositorio y el puerto SSH abierto a
+Internet. Este informe documenta el diseño, el despliegue \emph{como código} y la
+validación empírica de una plataforma en Microsoft Azure que corrige esos tres problemas:
+es \textbf{segura}, \textbf{escala automáticamente} y \textbf{sigue funcionando} cuando falla
+un componente.
+
+\begin{itemize}
+  \item \textbf{Repositorio:} \url{https://github.com/AgEnt3P18/caribeshop-taller-integrador}
+  \item \textbf{Herramientas:} Terraform 1.17 (azurerm 4.x), Azure CLI 2.93, GitHub Actions,
+        Checkov 3.4, Locust 2.x, Python 3 (solo biblioteca estándar en la app).
+  \item \textbf{Región:} \texttt{eastus} (zonas 1, 2 y 3). Tamaño \texttt{Standard\_D2s\_v4}
+        (2 vCPU); la cuota regional de la suscripción es de 10 vCPU.
+\end{itemize}
+
+% =================================================================
+\section{Arquitectura y decisiones de diseño}
+% =================================================================
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\footnotesize,
+  box/.style={draw=azure, fill=azure!6, rounded corners=2pt, minimum height=8mm, align=center, inner sep=3pt},
+  sec/.style={draw=badred!70, fill=badred!5, rounded corners=2pt, minimum height=8mm, align=center, inner sep=3pt},
+  obs/.style={draw=okgreen!70, fill=okgreen!6, rounded corners=2pt, minimum height=8mm, align=center, inner sep=3pt},
+  arr/.style={-{Stealth[length=2mm]}, thick, color=gray!70!black},
+  lbl/.style={font=\scriptsize, color=gray!50!black}
+]
+\node[box] (inet) {Internet\\ \scriptsize usuarios / Locust};
+\node[box, below=6mm of inet] (pip) {IP pública Standard\\ \scriptsize zonal-redundante (1·2·3)};
+\node[box, below=6mm of pip] (lb) {Load Balancer Standard\\ \scriptsize regla 80 · sonda HTTP \texttt{/health} 5\,s×2 · SNAT de salida};
+\node[box, below=10mm of lb, xshift=-38mm] (v1) {VM zona 1};
+\node[box, right=4mm of v1] (v2) {VM zona 2};
+\node[box, right=4mm of v2] (v3) {VM zona 3};
+\node[box, right=4mm of v3, dashed] (v4) {VM n\\ \scriptsize (autoscale)};
+\node[lbl, below=1mm of v2, xshift=12mm, align=center] (vinfo) {VMSS \texttt{vmss-caribeshop}: min 2 · max 4 · identidad administrada\\ sin IP pública · reparación automática · cloud-init};
+\begin{scope}[on background layer]
+  \node[draw=badred!60, dashed, rounded corners, fill=gray!4, fit=(v1)(v4)(vinfo), inner sep=4mm,
+        label={[lbl, anchor=south west, align=left]north west:{\textbf{snet-app} 10.20.1.0/24 · NSG: entra solo 80 (Internet, AzureLoadBalancer)\\ sale solo 443 a AzureKeyVault / AzureMonitor / Storage; Internet: Deny}}] (snet) {};
+\end{scope}
+\node[sec, below=12mm of snet.south west, anchor=north west, xshift=2mm] (kv) {Key Vault (RBAC)\\ \scriptsize purge protection · firewall\\ \scriptsize secreto con expiración};
+\node[sec, right=6mm of kv] (st) {Storage\\ \scriptsize sin llaves · firewall\\ \scriptsize TLS 1.2};
+\node[obs, right=6mm of st] (law) {Log Analytics\\ \scriptsize AuditEvent · autoscale · métricas};
+\node[obs, right=6mm of law] (al) {Alertas Monitor\\ \scriptsize sonda<100\,\% · CPU\\ \scriptsize correo};
+\draw[arr] (inet) -- node[lbl, right]{HTTP 80} (pip);
+\draw[arr] (pip) -- (lb);
+\draw[arr] (lb) -- (snet.north);
+\draw[arr] (snet.south -| kv.north) -- node[lbl, left, align=right]{service endpoint\\ token IMDS} (kv.north);
+\draw[arr] (snet.south -| st.north) -- (st.north);
+\draw[arr, dashed] (kv) to[bend right=25] (law);
+\draw[arr, dashed] (law) -- (al);
+\node[draw=utbblue, fill=utbblue!5, rounded corners, below=6mm of st, xshift=18mm, align=center, font=\scriptsize] (gov)
+  {\textbf{Gobierno:} Azure Policy (Deny): NIC sin IP pública · solo \texttt{eastus}\\
+   \textbf{DevSecOps:} GitHub Actions: \texttt{fmt -check} · \texttt{validate} · Checkov bloqueante\\
+   \textbf{Estado:} backend \texttt{azurerm} remoto (Entra ID, sin llaves, firewall, versionado)};
+\end{tikzpicture}}
+\caption{Arquitectura desplegada (todo con Terraform).}
+\label{fig:arq}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\caption{Decisiones de diseño y justificación.}
+\label{tab:decisiones}
+\begin{tabularx}{\textwidth}{@{}p{3.6cm}Y@{}}
+\toprule
+\textbf{Decisión} & \textbf{Justificación} \\
+\midrule
+Load Balancer Standard (no Application Gateway) & Cumple E2 con sonda dedicada y es zonal-redundante; la app no necesita reglas L7. App Gateway + WAF ($\approx$\,USD 320/mes en WAF\_v2) se recomienda para producción (TLS y OWASP). \\
+\texttt{Standard\_D2s\_v4} en 3 zonas & Las series B/Basv2/DASv5 no tenían cuota o estaban restringidas por zona en la suscripción; Dsv4 tiene cuota (10 vCPU) y las 3 zonas disponibles en \texttt{eastus}. CPU no limitada por créditos (mediciones estables). \\
+App en Python \emph{stdlib}, 1 proceso por vCPU (\texttt{SO\_REUSEPORT}) & Sin \texttt{pip} ni paquetes: la VM no necesita salir a Internet, lo que permite \textbf{denegar todo el egress}. Un proceso por vCPU evita el límite del GIL y hace que la métrica de CPU represente la carga real (necesario para el autoscale). \\
+Rol \emph{Key Vault Secrets User} con alcance al \textbf{secreto} & Mínimo privilegio más estricto que asignar el rol al vault completo: la identidad solo puede leer \texttt{db-password}. \\
+Egress denegado por NSG + service tags & Filtrado de salida sin costo de Azure Firewall ($\approx$\,USD 900/mes). Se permiten solo \texttt{AzureKeyVault}, \texttt{AzureMonitor} y \texttt{Storage.eastus} (extensiones del agente). \\
+Reparación automática con la sonda del LB & No requiere la extensión Application Health; período de gracia de 10 min (mínimo permitido) para no reemplazar instancias que aún ejecutan cloud-init. \\
+Dos políticas Deny integradas & \emph{Network interfaces should not have public IPs} refuerza S2 a nivel de plataforma; \emph{Allowed locations} evita recursos fuera de la región. \\
+Backend remoto con \texttt{use\_azuread\_auth} & La cuenta de estado tiene \texttt{shared\_access\_key\_enabled=false}: el estado solo se lee con identidad de Entra ID y RBAC, desde IPs autorizadas. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =================================================================
+\section{Implementación paso a paso}
+% =================================================================
+\begin{enumerate}
+  \item \textbf{Autenticación.} \texttt{az login} interactivo sobre el inquilino de la suscripción. El
+        flujo \emph{device code} fue bloqueado por los \emph{security defaults} de Entra ID
+        (\texttt{AADSTS530035}); se usó el flujo de código de autorización (PKCE).
+  \item \textbf{Selección de región/tamaño} con \texttt{az vm list-usage} y \texttt{az vm list-skus}
+        (cuotas por familia y restricciones por zona).
+  \item \textbf{Bootstrap del backend} (\texttt{bootstrap/main.tf}): RG, cuenta
+        \texttt{stcstfstate*} sin llaves, versionado, \emph{soft delete}, firewall y rol
+        \emph{Storage Blob Data Contributor} para el operador.
+  \item \textbf{Plataforma} (\texttt{infra/}): \texttt{terraform init -backend-config=backend.hcl},
+        \texttt{plan -out} y \texttt{apply}: \textbf{33 recursos} creados en un solo \emph{apply}.
+  \item \textbf{Configuración automática} (D3): \texttt{cloud-init.yaml.tftpl} escribe la app,
+        su configuración no sensible y un servicio \texttt{systemd}. Un cambio de la app se
+        desplegó con \texttt{terraform apply} + \texttt{az vmss reimage}, sin pasos manuales.
+  \item \textbf{Validación} de configuración (\texttt{scripts/collect\_evidence.sh}), pruebas
+        P1--P3 y recolección de evidencias en \texttt{evidencias/}.
+\end{enumerate}
+
+\begin{lstlisting}[caption={Fragmentos clave: autoscale con histéresis (E3) y rol de mínimo privilegio (S4).}]
+rule { # scale-out
+  metric_trigger { metric_name = "Percentage CPU", time_window = "PT5M",
+                   operator = "GreaterThan", threshold = 70 }
+  scale_action   { direction = "Increase", value = "1", cooldown = "PT5M" } }
+rule { # scale-in: umbral distinto (histeresis), ventana y cooldown mas largos
+  metric_trigger { metric_name = "Percentage CPU", time_window = "PT10M",
+                   operator = "LessThan", threshold = 30 }
+  scale_action   { direction = "Decrease", value = "1", cooldown = "PT10M" } }
+
+resource "azurerm_role_assignment" "vmss_secret_reader" {
+  scope                = azurerm_key_vault_secret.db.resource_versionless_id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id = azurerm_linux_virtual_machine_scale_set.app.identity[0].principal_id }
+\end{lstlisting}
+
+\textbf{Justificación de la histéresis y los cooldowns.} Entre 30\,\% y 70\,\% no hay acción, lo
+que evita oscilaciones (\emph{flapping}). El scale-out reacciona en 5 min y su cooldown
+(5 min) cubre el arranque de una instancia ($\approx$\,40\,s de aprovisionamiento + $\approx$\,30--60\,s de cloud-init) más la estabilización de la métrica.
+El scale-in es deliberadamente más lento (ventana y cooldown de 10 min): retirar capacidad
+por error es más costoso (latencia, errores) que mantenerla unos minutos más.
+
+% =================================================================
+\section{Trazabilidad de requisitos}
+% =================================================================
+\begin{table}[H]
+\centering\scriptsize
+\caption{Requisito $\rightarrow$ archivo/recurso de Terraform $\rightarrow$ evidencia.}
+\label{tab:traz}
+\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}p{6.4cm} Y@{}}
+\toprule
+\textbf{ID} & \textbf{Terraform} & \textbf{Evidencia} \\
+\midrule
+S1 & \texttt{providers.tf} (\texttt{backend "azurerm"}), \texttt{bootstrap/main.tf}, \texttt{.gitignore} & Estado en \texttt{stcstfstate8n6alz/tfstate}; historial Git sin \texttt{*.tfstate}/\texttt{*.tfvars}; secreto generado por \texttt{random\_password} \\
+S2 & \texttt{network.tf}: NSG \texttt{app}; VMSS sin bloque \texttt{public\_ip} & \texttt{evidencias/cli/s2\_*.txt}: NICs solo con IP privada; única IP pública = LB; 22/tcp inalcanzable (Fig.~\ref{fig:nsg}) \\
+S3 & \texttt{keyvault.tf}: RBAC, purge protection, \texttt{network\_acls}, expiración & \texttt{GET /secret} $\rightarrow$ longitud 32, SHA-256 \texttt{d1f1b00018c3}; Fig.~\ref{fig:kvfw} \\
+S4 & \texttt{keyvault.tf}: \texttt{vmss\_secret\_reader} & \texttt{az role assignment list}: un único rol, alcance al secreto \\
+S5 & \texttt{policy.tf}: 2 asignaciones de política & \texttt{RequestDisallowedByPolicy} (Lst.~\ref{lst:policy}) \\
+S6 & \texttt{monitoring.tf}: diagnostic setting \texttt{kv} & Consulta KQL (Lst.~\ref{lst:kql}) \\
+E1 & \texttt{compute.tf}: \texttt{zones=["1","2","3"]}, \texttt{zone\_balance} & Instancias distribuidas en zonas 1, 2 y 3 (\texttt{evidencias/cli/e1\_*}, Fig.~\ref{fig:vmss4}) \\
+E2 & \texttt{loadbalancer.tf}: sonda \texttt{health} (\texttt{/health}) & Métrica \emph{Health Probe Status} (Fig.~\ref{fig:p2logica}) \\
+E3 & \texttt{compute.tf}: autoscale; \texttt{ignore\_changes=[instances]} & Historial de autoscale (Fig.~\ref{fig:stair}) \\
+E4 & \texttt{compute.tf}: \texttt{automatic\_instance\_repair} & \texttt{repairVM} 00:50:19 reemplaza la instancia no sana (Fig.~\ref{fig:p2logica}) \\
+E5 & \texttt{monitoring.tf}: alertas \texttt{probe} y \texttt{cpu}; action group & Correo / historial de alertas (Fig.~\ref{fig:alerta}) \\
+D1 & \texttt{.github/workflows/iac-security.yml} & PR \#1 fallido por \texttt{CKV\_AZURE\_10} y PR \#2 corregido (Fig.~\ref{fig:d1}) \\
+D2 & \texttt{\#checkov:skip} en cada recurso & Tabla~\ref{tab:riesgos} \\
+D3 & \texttt{cloud-init.yaml.tftpl} + \texttt{app/app.py} & Reimage sin pasos manuales \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+%%RESULTADOS%%
