@@ -47,21 +47,27 @@ responde a cada uno:
 ## 🏗️ Arquitectura
 
 ```mermaid
-flowchart LR
-    U([👥 Clientes<br/>Internet]) -->|HTTP 80| PIP[IP pública Standard<br/>zonal-redundante]
-    PIP --> LB[⚖️ Load Balancer<br/>sonda /health cada 5 s]
+flowchart TB
+    U(["👥 Clientes desde Internet"]) -->|HTTP 80| LB["⚖️ Balanceador de carga<br/>IP pública zonal · revisa /health cada 5 s"]
 
-    subgraph NET["🔒 Red privada snet-app · solo entra tráfico web · salida a Internet bloqueada"]
-        direction TB
-        V1[🖥️ Servidor · zona 1]
-        V2[🖥️ Servidor · zona 2]
-        V3[🖥️ Servidor · zona 3]
+    subgraph NET["🔒 Red privada · solo entra tráfico web · salida a Internet bloqueada"]
+        direction LR
+        V1["🖥️ Servidor<br/>zona 1"]
+        V2["🖥️ Servidor<br/>zona 2"]
+        V3["🖥️ Servidor<br/>zona 3"]
     end
 
     LB --> V1 & V2 & V3
-    NET -->|identidad administrada| KV[(🔑 Key Vault<br/>contraseña)]
-    NET -->|métricas y registros| MON[📊 Log Analytics<br/>alertas por correo]
-    KV -.->|auditoría de lecturas| MON
+    NET -->|identidad administrada| KV[("🔑 Key Vault<br/>contraseña")]
+    NET -->|métricas y auditoría| MON["📊 Log Analytics<br/>alertas por correo"]
+
+    classDef ext fill:#EEF5F6,stroke:#0E3B4F,stroke-width:2px,color:#0E3B4F
+    classDef srv fill:#0E8C86,stroke:#0B6F6A,color:#FFFFFF
+    classDef svc fill:#FFFFFF,stroke:#0E3B4F,stroke-width:2px,color:#0E3B4F
+    class U,LB ext
+    class V1,V2,V3 srv
+    class KV,MON svc
+    style NET fill:#FFF4F1,stroke:#FF6B4A,stroke-width:2px,stroke-dasharray:6 4,color:#B91C1C
 ```
 
 | Componente | Configuración clave |
@@ -229,6 +235,13 @@ flowchart LR
     V --> C{Checkov}
     C -->|sin hallazgos| OK([✅ Se puede fusionar])
     C -->|hallazgo| KO([❌ Bloqueado])
+
+    classDef step fill:#EEF5F6,stroke:#0E3B4F,color:#0E3B4F
+    classDef ok fill:#E8F5EC,stroke:#15803D,color:#15803D
+    classDef ko fill:#FDECEA,stroke:#B91C1C,color:#B91C1C
+    class PR,F,V,C step
+    class OK ok
+    class KO ko
 ```
 
 Para demostrarlo, el PR [#1](../../pull/1) abrió SSH a Internet y Checkov lo bloqueó
