@@ -92,38 +92,18 @@ secreto no llegue al estado.
 % =================================================================
 \section{Conclusiones}
 % =================================================================
-\begin{enumerate}
-  \item \textbf{Los tres incidentes de CaribeShop quedan cubiertos con evidencia medida.}
-        \begin{itemize}
-          \item \textbf{Saturación:} el autoscale pasó de 2 a 4 instancias y volvió a 2, con 0,55\,\% de error
-                en 207\,435 peticiones.
-          \item \textbf{Falla de una máquina:} la falla lógica se absorbió en 8\,s sin errores adicionales;
-                la abrupta produjo 15\,s de errores y la capacidad mínima volvió en 109\,s.
-          \item \textbf{Hallazgos de auditoría:} no hay secretos en el código, no hay puertos de
-                administración expuestos y un PR que abría SSH fue bloqueado por el pipeline.
-        \end{itemize}
-  \item \textbf{La seguridad se construyó en capas independientes} y cada una se demostró por
-        separado:
-        \begin{itemize}
-          \item NSG con egress denegado;
-          \item firewall del Key Vault, que rechazó incluso a un usuario con el rol correcto;
-          \item RBAC con alcance a un único secreto;
-          \item Azure Policy, que rechazó recursos creados fuera de Terraform;
-          \item auditoría KQL.
-        \end{itemize}
-  \item \textbf{Medir antes de configurar.} La capacidad medida (119 RPS por instancia, 112 RPS
-        con p95 < 500\,ms) y la relación CPU--RPS permitieron justificar los umbrales del
-        autoscale y dimensionar el escenario de 300 RPS (5 instancias, justo en el límite de la
-        cuota).
-  \item \textbf{El autoscale reactivo tiene un retraso de $\approx$\,5--6\,min}: es adecuado para
-        rampas, pero en picos cortos la capacidad llega tarde. Para la campaña se recomienda un
-        perfil programado o autoscale predictivo.
-  \item \textbf{Lecciones operativas.} En redes domésticas aparecen artefactos de medición
-        (retransmisiones SYN de 1,2\,s) que deben separarse de la saturación real. Las cuotas y
-        las restricciones de SKU por zona condicionan el diseño desde el inicio. Los
-        \emph{security defaults} de Entra ID bloquean el flujo \emph{device code} de la CLI.
-\end{enumerate}
+La plataforma resuelve los tres incidentes de CaribeShop con evidencia medida. Ante la
+\textbf{saturación}, el autoscale pasó de 2 a 4 instancias y volvió a 2 con 0,55\,\% de error en
+207\,435 peticiones. Ante la \textbf{falla de una máquina}, una instancia no sana salió del
+balanceador en 8\,s sin errores adicionales, y tras una eliminación abrupta la capacidad mínima
+volvió en 109\,s. Ante la \textbf{auditoría}, no quedan secretos en el código ni puertos de
+administración expuestos, y un PR que abría SSH fue bloqueado por el pipeline.
 
-Todos los recursos se eliminaron al terminar con \texttt{terraform destroy}, verificado en el
-portal (ver \texttt{README.md}).
-
+La seguridad se construyó en capas independientes y cada una se demostró con una prueba
+negativa: firewall del Key Vault, RBAC con alcance a un único secreto, egress denegado y Azure
+Policy. Medir la capacidad (119 RPS por instancia) permitió justificar los umbrales del
+autoscale y dimensionar el escenario de 300 RPS. La principal limitación observada es el retraso
+de $\approx$\,5--6\,min del autoscale reactivo, que para la campaña se mitiga con un perfil
+programado o autoscale predictivo. Todos los recursos se eliminaron con \texttt{terraform destroy}
+y se verificó en el portal. Las capturas y salidas de comandos que respaldan cada requisito están
+en \texttt{evidencias/} del repositorio.

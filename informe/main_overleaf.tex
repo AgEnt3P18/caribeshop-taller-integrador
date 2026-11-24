@@ -8,7 +8,7 @@
 \usepackage[spanish,es-tabla,es-nodecimaldot]{babel}
 \usepackage{lmodern}
 \usepackage{microtype}
-\usepackage[margin=2.2cm]{geometry}
+\usepackage[margin=2.0cm]{geometry}
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{booktabs}
@@ -207,21 +207,6 @@ Backend remoto con \texttt{use\_azuread\_auth} & La cuenta de estado tiene \text
         P1--P3 y recolección de evidencias en \texttt{evidencias/}.
 \end{enumerate}
 
-\begin{lstlisting}[caption={Fragmentos clave: autoscale con histéresis (E3) y rol de mínimo privilegio (S4).}]
-rule { # scale-out
-  metric_trigger { metric_name = "Percentage CPU", time_window = "PT5M",
-                   operator = "GreaterThan", threshold = 70 }
-  scale_action   { direction = "Increase", value = "1", cooldown = "PT5M" } }
-rule { # scale-in: umbral distinto (histeresis), ventana y cooldown mas largos
-  metric_trigger { metric_name = "Percentage CPU", time_window = "PT10M",
-                   operator = "LessThan", threshold = 30 }
-  scale_action   { direction = "Decrease", value = "1", cooldown = "PT10M" } }
-
-resource "azurerm_role_assignment" "vmss_secret_reader" {
-  scope                = azurerm_key_vault_secret.db.resource_versionless_id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id = azurerm_linux_virtual_machine_scale_set.app.identity[0].principal_id }
-\end{lstlisting}
 
 \textbf{Justificación de la histéresis y los cooldowns.} Entre 30\,\% y 70\,\% no hay acción, lo
 que evita oscilaciones (\emph{flapping}). El scale-out reacciona en 5 min y su cooldown
@@ -241,17 +226,17 @@ por error es más costoso (latencia, errores) que mantenerla unos minutos más.
 \textbf{ID} & \textbf{Terraform} & \textbf{Evidencia} \\
 \midrule
 S1 & \texttt{providers.tf} (\texttt{backend "azurerm"}), \texttt{bootstrap/main.tf}, \texttt{.gitignore} & Estado en \texttt{stcstfstate8n6alz/tfstate}; historial Git sin \texttt{*.tfstate}/\texttt{*.tfvars}; secreto generado por \texttt{random\_password} \\
-S2 & \texttt{network.tf}: NSG \texttt{app}; VMSS sin bloque \texttt{public\_ip} & \texttt{evidencias/cli/s2\_*.txt}: NICs solo con IP privada; única IP pública = LB; 22/tcp inalcanzable (Fig.~\ref{fig:nsg}) \\
-S3 & \texttt{keyvault.tf}: RBAC, purge protection, \texttt{network\_acls}, expiración & \texttt{GET /secret} $\rightarrow$ longitud 32, SHA-256 \texttt{d1f1b00018c3}; Fig.~\ref{fig:kvfw} \\
+S2 & \texttt{network.tf}: NSG \texttt{app}; VMSS sin bloque \texttt{public\_ip} & \texttt{evidencias/cli/s2\_*.txt}: NICs solo con IP privada; única IP pública = LB; 22/tcp inalcanzable; captura \texttt{04\_nsg\_reglas} \\
+S3 & \texttt{keyvault.tf}: RBAC, purge protection, \texttt{network\_acls}, expiración & \texttt{GET /secret} $\rightarrow$ longitud 32, SHA-256 \texttt{d1f1b00018c3}; captura \texttt{05\_kv\_firewall} \\
 S4 & \texttt{keyvault.tf}: \texttt{vmss\_secret\_reader} & \texttt{az role assignment list}: un único rol, alcance al secreto \\
 S5 & \texttt{policy.tf}: 2 asignaciones de política & \texttt{RequestDisallowedByPolicy} (Lst.~\ref{lst:policy}) \\
 S6 & \texttt{monitoring.tf}: diagnostic setting \texttt{kv} & Consulta KQL (Lst.~\ref{lst:kql}) \\
-E1 & \texttt{compute.tf}: \texttt{zones=["1","2","3"]}, \texttt{zone\_balance} & Instancias distribuidas en zonas 1, 2 y 3 (\texttt{evidencias/cli/e1\_*}, Fig.~\ref{fig:vmss4}) \\
+E1 & \texttt{compute.tf}: \texttt{zones=["1","2","3"]}, \texttt{zone\_balance} & Instancias distribuidas en zonas 1, 2 y 3 (\texttt{evidencias/cli/e1\_*}; captura \texttt{13\_vmss\_instances}) \\
 E2 & \texttt{loadbalancer.tf}: sonda \texttt{health} (\texttt{/health}) & Métrica \emph{Health Probe Status} (Fig.~\ref{fig:p2logica}) \\
 E3 & \texttt{compute.tf}: autoscale; \texttt{ignore\_changes=[instances]} & Historial de autoscale (Fig.~\ref{fig:stair}) \\
 E4 & \texttt{compute.tf}: \texttt{automatic\_instance\_repair} & \texttt{repairVM} 00:50:19 reemplaza la instancia no sana (Fig.~\ref{fig:p2logica}) \\
-E5 & \texttt{monitoring.tf}: alertas \texttt{probe} y \texttt{cpu}; action group & Correo / historial de alertas (Fig.~\ref{fig:alerta}) \\
-D1 & \texttt{.github/workflows/iac-security.yml} & PR \#1 fallido por \texttt{CKV\_AZURE\_10} y PR \#2 corregido (Fig.~\ref{fig:d1}) \\
+E5 & \texttt{monitoring.tf}: alertas \texttt{probe} y \texttt{cpu}; action group & Historial de alertas (Tabla~\ref{tab:alertas}) y correo recibido \\
+D1 & \texttt{.github/workflows/iac-security.yml} & PR \#1 fallido por \texttt{CKV\_AZURE\_10} y PR \#2 corregido (capturas \texttt{18\_d1}, \texttt{20\_d1}) \\
 D2 & \texttt{\#checkov:skip} en cada recurso & Tabla~\ref{tab:riesgos} \\
 D3 & \texttt{cloud-init.yaml.tftpl} + \texttt{app/app.py} & Reimage sin pasos manuales \\
 \bottomrule
@@ -319,21 +304,6 @@ Acción (UTC) & Instancias & Disparador & Reacción \\
 \end{tabular}
 \end{table}
 
-\begin{table}[H]
-\centering\small
-\caption{Rendimiento por fase (medianas de las ventanas de Locust).}
-\begin{tabular}{@{}lrrrr@{}}
-\toprule
-Fase & RPS & p50 (ms) & p95 (ms) & Fallos/s \\
-\midrule
-200 usuarios, 2 instancias & 144 & 240 & 1\,200 & 1,25 \\
-280 usuarios, 2 instancias (antes del scale-out) & 188 & 330 & 1\,200 & 1,48 \\
-280 usuarios, 3 instancias & 206 & 230 & 600 & 1,01 \\
-120 usuarios, 4 instancias & 93 & 220 & 330 & 0,39 \\
-Valle, 20 usuarios & 16 & 210 & 240 & 0,03 \\
-\bottomrule
-\end{tabular}
-\end{table}
 
 \textbf{Análisis.} El autoscale se comportó según el diseño: ningún \emph{flapping}, scale-out
 escalonado respetando el cooldown y scale-in conservador. La histéresis se ve en la
@@ -384,7 +354,7 @@ Recuperación de capacidad & Reparación automática (E4): \texttt{repairVM} 00:
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{figuras/e2_health_probe.png}
+\includegraphics[width=0.62\textwidth]{figuras/e2_health_probe.png}
 \caption{E2: métrica \emph{Health Probe Status} por instancia: la instancia en falla lógica queda en 0\,\% hasta que la reparación automática la reemplaza.}
 \label{fig:p2logica}
 \end{figure}
@@ -405,7 +375,7 @@ mientras que el autoscale repuso la capacidad mínima en menos de 2\,min.
 \begin{enumerate}
   \item \textbf{Red no autorizada.} Desde Azure Cloud Shell (IP de salida 128.24.198.36), con un
         usuario que tiene el rol \emph{Key Vault Secrets Officer}, \texttt{az keyvault secret show}
-        devolvió \texttt{Forbidden / ForbiddenByFirewall} (Fig.~\ref{fig:cloudshell}). El rol no basta:
+        devolvió \texttt{Forbidden / ForbiddenByFirewall} (captura \texttt{12\_p3\_cloudshell\_denegado}). El rol no basta:
         la red también debe estar autorizada.
   \item \textbf{Filtrado de salida.} Ejecutado dentro de una instancia con
         \texttt{az vmss run-command}: \texttt{example.com}, \texttt{github.com} y \texttt{neverssl.com}
@@ -416,12 +386,6 @@ mientras que el autoscale repuso la capacidad mínima en menos de 2\,min.
   \item \textbf{Violación de la política (S5).} Ver Listado~\ref{lst:policy}.
 \end{enumerate}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.85\textwidth]{figuras/12b_p3_cloudshell_recorte.png}
-\caption{P3.1: lectura del secreto desde Cloud Shell rechazada por el firewall del Key Vault.}
-\label{fig:cloudshell}
-\end{figure}
 
 \begin{lstlisting}[caption={P3.3 / S5: rechazo de Azure Policy (salida abreviada).},label={lst:policy},language={}]
 $ az network nic create -g rg-caribeshop -n nic-prueba-violacion --vnet-name vnet-caribeshop \
@@ -439,21 +403,8 @@ El PR \#1 agregó una regla \texttt{Allow-SSH-Soporte} (22/tcp desde \texttt{*})
 trabajos \texttt{fmt}/\texttt{validate} pasaron, pero \textbf{Checkov falló} con
 \texttt{CKV\_AZURE\_10} en \texttt{infra/network.tf\#L43} y el PR se cerró sin fusionar. El PR \#2
 revierte la regla y documenta el soporte con \texttt{az vmss run-command} (plano de control con
-Entra ID y auditado); su pipeline pasó en verde y se fusionó (Fig.~\ref{fig:d1}).
+Entra ID y auditado); su pipeline pasó en verde y se fusionó. Ambos PR y sus ejecuciones están en el repositorio (capturas \texttt{17}--\texttt{20\_d1}).
 
-\begin{figure}[H]
-\centering
-\begin{subfigure}{0.49\textwidth}
-\includegraphics[width=\linewidth]{figuras/18_d1_checkov_bloquea.png}
-\caption{PR \#1: Checkov bloquea (\texttt{CKV\_AZURE\_10}).}
-\end{subfigure}\hfill
-\begin{subfigure}{0.49\textwidth}
-\includegraphics[width=\linewidth]{figuras/20_d1_actions.png}
-\caption{Historial de ejecuciones del workflow.}
-\end{subfigure}
-\caption{Pipeline DevSecOps en GitHub Actions.}
-\label{fig:d1}
-\end{figure}
 
 \subsection{Observabilidad: S6 (KQL) y E5 (alertas)}
 \begin{lstlisting}[caption={S6: consulta KQL sobre la auditoría del Key Vault y resultado.},label={lst:kql},language={}]
@@ -473,7 +424,7 @@ La identidad que lee el secreto es la del VMSS (\texttt{xms\_mirid =
 .../virtualMachineScaleSets/vmss-caribeshop}, \texttt{oid} = \texttt{vmss\_principal\_id}), desde la
 subred autorizada. Las alertas de E5 se dispararon durante las pruebas y quedaron registradas
 (Tabla~\ref{tab:alertas}); el grupo de acciones envió correo y las notificaciones del autoscale
-llegaron al buzón (Fig.~\ref{fig:alerta}).
+llegaron al buzón (captura \texttt{14\_e5\_correo\_autoscale}).
 
 \begin{table}[H]
 \centering\small
@@ -492,12 +443,6 @@ Regla & Sev. & Disparada (UTC) & Resuelta (UTC) \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.8\textwidth]{figuras/14_e5_correo_autoscale.png}
-\caption{Correo recibido de Azure Monitor: el autoscale cambia la capacidad de 3 a 4 instancias.}
-\label{fig:alerta}
-\end{figure}
 
 % =================================================================
 \section{SLA compuesto estimado}
@@ -681,116 +626,21 @@ secreto no llegue al estado.
 % =================================================================
 \section{Conclusiones}
 % =================================================================
-\begin{enumerate}
-  \item \textbf{Los tres incidentes de CaribeShop quedan cubiertos con evidencia medida.}
-        \begin{itemize}
-          \item \textbf{Saturación:} el autoscale pasó de 2 a 4 instancias y volvió a 2, con 0,55\,\% de error
-                en 207\,435 peticiones.
-          \item \textbf{Falla de una máquina:} la falla lógica se absorbió en 8\,s sin errores adicionales;
-                la abrupta produjo 15\,s de errores y la capacidad mínima volvió en 109\,s.
-          \item \textbf{Hallazgos de auditoría:} no hay secretos en el código, no hay puertos de
-                administración expuestos y un PR que abría SSH fue bloqueado por el pipeline.
-        \end{itemize}
-  \item \textbf{La seguridad se construyó en capas independientes} y cada una se demostró por
-        separado:
-        \begin{itemize}
-          \item NSG con egress denegado;
-          \item firewall del Key Vault, que rechazó incluso a un usuario con el rol correcto;
-          \item RBAC con alcance a un único secreto;
-          \item Azure Policy, que rechazó recursos creados fuera de Terraform;
-          \item auditoría KQL.
-        \end{itemize}
-  \item \textbf{Medir antes de configurar.} La capacidad medida (119 RPS por instancia, 112 RPS
-        con p95 < 500\,ms) y la relación CPU--RPS permitieron justificar los umbrales del
-        autoscale y dimensionar el escenario de 300 RPS (5 instancias, justo en el límite de la
-        cuota).
-  \item \textbf{El autoscale reactivo tiene un retraso de $\approx$\,5--6\,min}: es adecuado para
-        rampas, pero en picos cortos la capacidad llega tarde. Para la campaña se recomienda un
-        perfil programado o autoscale predictivo.
-  \item \textbf{Lecciones operativas.} En redes domésticas aparecen artefactos de medición
-        (retransmisiones SYN de 1,2\,s) que deben separarse de la saturación real. Las cuotas y
-        las restricciones de SKU por zona condicionan el diseño desde el inicio. Los
-        \emph{security defaults} de Entra ID bloquean el flujo \emph{device code} de la CLI.
-\end{enumerate}
+La plataforma resuelve los tres incidentes de CaribeShop con evidencia medida. Ante la
+\textbf{saturación}, el autoscale pasó de 2 a 4 instancias y volvió a 2 con 0,55\,\% de error en
+207\,435 peticiones. Ante la \textbf{falla de una máquina}, una instancia no sana salió del
+balanceador en 8\,s sin errores adicionales, y tras una eliminación abrupta la capacidad mínima
+volvió en 109\,s. Ante la \textbf{auditoría}, no quedan secretos en el código ni puertos de
+administración expuestos, y un PR que abría SSH fue bloqueado por el pipeline.
 
-Todos los recursos se eliminaron al terminar con \texttt{terraform destroy}, verificado en el
-portal (ver \texttt{README.md}).
-
-
-\clearpage
-\appendix
-% =================================================================
-\section{Anexo: evidencias adicionales}
-% =================================================================
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\textwidth]{figuras/01_rg_recursos.png}
-\caption{Grupo de recursos \texttt{rg-caribeshop} con los recursos creados por Terraform.}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\textwidth]{figuras/13_vmss_instances.png}
-\caption{E1/E3: VMSS con 4 instancias durante el pico de la prueba escalonada.}
-\label{fig:vmss4}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\textwidth]{figuras/04_nsg_reglas.png}
-\caption{S2: reglas del NSG \texttt{nsg-app} (entrada solo 80; salida solo etiquetas de servicio).}
-\label{fig:nsg}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\textwidth]{figuras/05_kv_firewall.png}
-\caption{S3: firewall del Key Vault (subred \texttt{snet-app} + rangos del operador).}
-\label{fig:kvfw}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\textwidth]{figuras/07_politicas.png}
-\caption{S5: asignaciones de Azure Policy en el grupo de recursos (cumplimiento).}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\textwidth]{figuras/08_autoscale.png}
-\caption{E3: autoscale personalizado del VMSS (recuento de 4 instancias durante el pico).}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\textwidth]{figuras/16_e3_historial_autoscale.png}
-\caption{E3: historial de ejecución del autoscale en el portal (2$\rightarrow$1 en P1.1; 2$\rightarrow$3$\rightarrow$4$\rightarrow$3$\rightarrow$2 en P1.2; 1$\rightarrow$2 en P2.2).}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\textwidth]{figuras/21_destroy_verificado.png}
-\caption{Verificación tras \texttt{terraform destroy} (33 recursos eliminados): solo queda el grupo del estado remoto; \texttt{NetworkWatcherRG} lo crea Azure automáticamente y está vacío.}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\textwidth]{figuras/11_storage_sin_llaves.png}
-\caption{Storage de la app: acceso con llave compartida deshabilitado.}
-\end{figure}
-
-\begin{lstlisting}[caption={S2/S4: salidas de la CLI (extracto de \texttt{evidencias/cli/}).},language={}]
-## az vmss nic list (instancias sin IP publica)
-Nic      PrivateIp      PublicIp
-nic-app  10.20.1.4      (ninguna)
-nic-app  10.20.1.5      (ninguna)
-## IPs publicas en el RG: solo pip-lb-caribeshop (Standard, zonas 1,2,3)
-
-## az role assignment list --assignee 95df5c1c-3391-42db-be9e-5a322a5acad3 --all
-Role                    Scope
-Key Vault Secrets User  .../vaults/kv-cs-s0pya/secrets/db-password
-\end{lstlisting}
+La seguridad se construyó en capas independientes y cada una se demostró con una prueba
+negativa: firewall del Key Vault, RBAC con alcance a un único secreto, egress denegado y Azure
+Policy. Medir la capacidad (119 RPS por instancia) permitió justificar los umbrales del
+autoscale y dimensionar el escenario de 300 RPS. La principal limitación observada es el retraso
+de $\approx$\,5--6\,min del autoscale reactivo, que para la campaña se mitiga con un perfil
+programado o autoscale predictivo. Todos los recursos se eliminaron con \texttt{terraform destroy}
+y se verificó en el portal. Las capturas y salidas de comandos que respaldan cada requisito están
+en \texttt{evidencias/} del repositorio.
 
 
 \end{document}

@@ -104,21 +104,6 @@ Backend remoto con \texttt{use\_azuread\_auth} & La cuenta de estado tiene \text
         P1--P3 y recolección de evidencias en \texttt{evidencias/}.
 \end{enumerate}
 
-\begin{lstlisting}[caption={Fragmentos clave: autoscale con histéresis (E3) y rol de mínimo privilegio (S4).}]
-rule { # scale-out
-  metric_trigger { metric_name = "Percentage CPU", time_window = "PT5M",
-                   operator = "GreaterThan", threshold = 70 }
-  scale_action   { direction = "Increase", value = "1", cooldown = "PT5M" } }
-rule { # scale-in: umbral distinto (histeresis), ventana y cooldown mas largos
-  metric_trigger { metric_name = "Percentage CPU", time_window = "PT10M",
-                   operator = "LessThan", threshold = 30 }
-  scale_action   { direction = "Decrease", value = "1", cooldown = "PT10M" } }
-
-resource "azurerm_role_assignment" "vmss_secret_reader" {
-  scope                = azurerm_key_vault_secret.db.resource_versionless_id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id = azurerm_linux_virtual_machine_scale_set.app.identity[0].principal_id }
-\end{lstlisting}
 
 \textbf{Justificación de la histéresis y los cooldowns.} Entre 30\,\% y 70\,\% no hay acción, lo
 que evita oscilaciones (\emph{flapping}). El scale-out reacciona en 5 min y su cooldown
@@ -138,17 +123,17 @@ por error es más costoso (latencia, errores) que mantenerla unos minutos más.
 \textbf{ID} & \textbf{Terraform} & \textbf{Evidencia} \\
 \midrule
 S1 & \texttt{providers.tf} (\texttt{backend "azurerm"}), \texttt{bootstrap/main.tf}, \texttt{.gitignore} & Estado en \texttt{stcstfstate8n6alz/tfstate}; historial Git sin \texttt{*.tfstate}/\texttt{*.tfvars}; secreto generado por \texttt{random\_password} \\
-S2 & \texttt{network.tf}: NSG \texttt{app}; VMSS sin bloque \texttt{public\_ip} & \texttt{evidencias/cli/s2\_*.txt}: NICs solo con IP privada; única IP pública = LB; 22/tcp inalcanzable (Fig.~\ref{fig:nsg}) \\
-S3 & \texttt{keyvault.tf}: RBAC, purge protection, \texttt{network\_acls}, expiración & \texttt{GET /secret} $\rightarrow$ longitud 32, SHA-256 \texttt{d1f1b00018c3}; Fig.~\ref{fig:kvfw} \\
+S2 & \texttt{network.tf}: NSG \texttt{app}; VMSS sin bloque \texttt{public\_ip} & \texttt{evidencias/cli/s2\_*.txt}: NICs solo con IP privada; única IP pública = LB; 22/tcp inalcanzable; captura \texttt{04\_nsg\_reglas} \\
+S3 & \texttt{keyvault.tf}: RBAC, purge protection, \texttt{network\_acls}, expiración & \texttt{GET /secret} $\rightarrow$ longitud 32, SHA-256 \texttt{d1f1b00018c3}; captura \texttt{05\_kv\_firewall} \\
 S4 & \texttt{keyvault.tf}: \texttt{vmss\_secret\_reader} & \texttt{az role assignment list}: un único rol, alcance al secreto \\
 S5 & \texttt{policy.tf}: 2 asignaciones de política & \texttt{RequestDisallowedByPolicy} (Lst.~\ref{lst:policy}) \\
 S6 & \texttt{monitoring.tf}: diagnostic setting \texttt{kv} & Consulta KQL (Lst.~\ref{lst:kql}) \\
-E1 & \texttt{compute.tf}: \texttt{zones=["1","2","3"]}, \texttt{zone\_balance} & Instancias distribuidas en zonas 1, 2 y 3 (\texttt{evidencias/cli/e1\_*}, Fig.~\ref{fig:vmss4}) \\
+E1 & \texttt{compute.tf}: \texttt{zones=["1","2","3"]}, \texttt{zone\_balance} & Instancias distribuidas en zonas 1, 2 y 3 (\texttt{evidencias/cli/e1\_*}; captura \texttt{13\_vmss\_instances}) \\
 E2 & \texttt{loadbalancer.tf}: sonda \texttt{health} (\texttt{/health}) & Métrica \emph{Health Probe Status} (Fig.~\ref{fig:p2logica}) \\
 E3 & \texttt{compute.tf}: autoscale; \texttt{ignore\_changes=[instances]} & Historial de autoscale (Fig.~\ref{fig:stair}) \\
 E4 & \texttt{compute.tf}: \texttt{automatic\_instance\_repair} & \texttt{repairVM} 00:50:19 reemplaza la instancia no sana (Fig.~\ref{fig:p2logica}) \\
-E5 & \texttt{monitoring.tf}: alertas \texttt{probe} y \texttt{cpu}; action group & Correo / historial de alertas (Fig.~\ref{fig:alerta}) \\
-D1 & \texttt{.github/workflows/iac-security.yml} & PR \#1 fallido por \texttt{CKV\_AZURE\_10} y PR \#2 corregido (Fig.~\ref{fig:d1}) \\
+E5 & \texttt{monitoring.tf}: alertas \texttt{probe} y \texttt{cpu}; action group & Historial de alertas (Tabla~\ref{tab:alertas}) y correo recibido \\
+D1 & \texttt{.github/workflows/iac-security.yml} & PR \#1 fallido por \texttt{CKV\_AZURE\_10} y PR \#2 corregido (capturas \texttt{18\_d1}, \texttt{20\_d1}) \\
 D2 & \texttt{\#checkov:skip} en cada recurso & Tabla~\ref{tab:riesgos} \\
 D3 & \texttt{cloud-init.yaml.tftpl} + \texttt{app/app.py} & Reimage sin pasos manuales \\
 \bottomrule
