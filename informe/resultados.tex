@@ -1,149 +1,124 @@
 % =================================================================
 \section{Resultados de las pruebas}
 % =================================================================
-Locust se ejecutó desde la red del equipo (Cartagena, RTT $\approx$ 200\,ms hacia \texttt{eastus}).
-El \emph{endpoint} \texttt{/work} consume 40\,ms de CPU por petición (8 de cada 9 peticiones) y
-\texttt{/} sirve la portada. Los CSV e informes HTML están en \texttt{evidencias/}.
+Las pruebas de carga se lanzaron con Locust desde Cartagena. Cada visita a la tienda hace
+trabajar la CPU unos 40 milisegundos, para simular una página real. Los resultados completos
+(CSV e informes HTML) están en la carpeta \texttt{evidencias/}.
 
-\subsection{P1.1 Capacidad de una instancia}
-Con el autoscale fijado en \texttt{min = max = 1} (\texttt{terraform apply -var min\_instances=1
--var max\_instances=1}) se aumentaron los usuarios de 5 en 5 (y luego de 10 en 10) cada 45\,s hasta 240.
+\subsection{P1.1 ¿Cuánto aguanta un solo servidor?}
+Dejamos el sistema con un único servidor y fuimos aumentando los usuarios poco a poco, de 5 en 5
+y luego de 10 en 10, hasta 240.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.86\textwidth]{figuras/p1_capacidad.png}
-\caption{Latencia (mediana por escalón de las ventanas de Locust) frente a RPS con una sola instancia.}
+\includegraphics[width=0.82\textwidth]{figuras/p1_capacidad.png}
+\caption{Tiempo de respuesta frente a peticiones por segundo con un solo servidor.}
 \label{fig:cap}
 \end{figure}
 
 \begin{itemize}
-  \item El \textbf{throughput se satura en $\approx$ 120 RPS} (la CPU llega al 98\,\%): desde 170
-        usuarios agregar usuarios solo aumenta la cola y la latencia.
-  \item \textbf{Capacidad sostenible: 119 RPS con p95 < 1 s} (190 usuarios, p95 = 960\,ms) y
-        \textbf{112 RPS con p95 < 500 ms} (150 usuarios). El p95 pasa 1 s de forma sostenida desde
-        200 usuarios.
-  \item Al 70\,\% de CPU (umbral del autoscale) una instancia atiende $\approx$ 60--65 RPS.
-  \item Los escalones con p95 exactamente 1,2\,s y p50 estable (círculos grises) \textbf{no son
-        saturación}: corresponden al primer RTO de TCP (1\,s) más el RTT (0,2\,s), es decir, SYN
-        perdidos en la red doméstica del cliente. Todos los fallos registrados son
-        \texttt{ConnectTimeoutError} (fase de conexión), ninguno 5xx.
+  \item Un servidor atiende como máximo \textbf{unas 120 peticiones por segundo}; a partir de ahí
+        la CPU llega al 98\,\% y solo crecen las esperas.
+  \item \textbf{Capacidad útil: 119 peticiones/s} manteniendo el 95\,\% de las respuestas por debajo
+        de 1 segundo, y \textbf{112 peticiones/s} si se exige menos de medio segundo.
+  \item Al 70\,\% de CPU, el punto en que el autoscale agrega servidores, uno solo atiende unas
+        60 peticiones por segundo.
+  \item Los puntos grises de 1,2\,s no indican saturación: son reintentos de conexión de nuestra
+        propia red doméstica. Ningún error vino del servidor.
 \end{itemize}
 
-\subsection{P1.2 Escalamiento con perfil escalonado (35 min)}
-Perfil: 40 $\rightarrow$ 120 $\rightarrow$ 200 $\rightarrow$ \textbf{280 usuarios} (11 min)
-$\rightarrow$ 120 $\rightarrow$ 20 (12 min). Autoscale restaurado a 2--4 instancias.
-Total: \textbf{207\,435 peticiones, 1\,143 fallidas (0,55\,\%)}.
+\subsection{P1.2 ¿Escala solo cuando sube la demanda?}
+Durante 35 minutos subimos la carga por escalones (de 40 a 280 usuarios) y luego la bajamos a 20,
+con el autoscale configurado entre 2 y 4 servidores. En total hubo \textbf{207\,435 peticiones y
+solo 0,55\,\% de errores}.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{figuras/p1_escalonado.png}
-\caption{RPS y usuarios (Locust), latencia, CPU promedio del VMSS e instancias (\texttt{az vmss list-instances} cada 20\,s), alineados en UTC.}
+\includegraphics[width=0.86\textwidth]{figuras/p1_escalonado.png}
+\caption{Carga, tiempo de respuesta, CPU y número de servidores durante la prueba (hora UTC).}
 \label{fig:stair}
 \end{figure}
 
 \begin{table}[H]
-\centering\small
-\caption{Historial de ejecución del autoscale (\texttt{AutoscaleScaleActionsLog}) y reacción medida.}
+\centering\small\tablaestilo
+\caption{Lo que hizo el autoscale durante la prueba.}
 \label{tab:autoscale}
-\begin{tabular}{@{}llll@{}}
-\toprule
-Acción (UTC) & Instancias & Disparador & Reacción \\
-\midrule
-00:09:19 & 2 $\rightarrow$ 3 & CPU > 70\,\% desde 00:04 (promedio 5 min = 80\,\%) & 5 min 19 s; \emph{Succeeded} 00:09:58 \\
-00:14:49 & 3 $\rightarrow$ 4 & CPU aún > 70\,\% tras el cooldown de 5 min & \emph{Succeeded} 00:15:34 \\
-00:26:49 & 4 $\rightarrow$ 3 & CPU < 30\,\% desde 00:20 (ventana 10 min) & 6 min 49 s \\
-00:37:19 & 3 $\rightarrow$ 2 & CPU < 30\,\% tras el cooldown de 10 min & -- \\
-\bottomrule
+\begin{tabular}{|c|c|p{6.4cm}|c|}
+\hline
+\encab \hd{Hora (UTC)} & \hd{Servidores} & \hd{Motivo} & \hd{Tardó} \\ \hline
+00:09 & 2 $\rightarrow$ 3 & La CPU pasó del 70\,\% a las 00:04 & 5 min 19 s \\ \hline
+00:14 & 3 $\rightarrow$ 4 & La CPU seguía alta tras la espera de 5 min & 5 min \\ \hline
+00:26 & 4 $\rightarrow$ 3 & La CPU bajó del 30\,\% a las 00:20 & 6 min 49 s \\ \hline
+00:37 & 3 $\rightarrow$ 2 & La CPU seguía baja tras la espera de 10 min & 10 min \\ \hline
 \end{tabular}
 \end{table}
 
+\textbf{Análisis.} El autoscale funcionó como se diseñó: subió y bajó en orden, sin oscilar.
+Entre las 00:16 y las 00:20 la CPU estuvo entre 30 y 70\,\% y, como esperábamos, no hizo nada.
+El punto débil es el tiempo de reacción: con 280 usuarios y solo 2 servidores las respuestas se
+hicieron más lentas durante unos 5 minutos, hasta que llegó el tercero. El cuarto servidor estuvo
+listo justo cuando la carga empezaba a bajar. Para picos cortos, el autoscale reactivo llega tarde
+(lo retomamos en la pregunta 2).
 
-\textbf{Análisis.} El autoscale se comportó según el diseño: ningún \emph{flapping}, scale-out
-escalonado respetando el cooldown y scale-in conservador. La histéresis se ve en la
-Fig.~\ref{fig:stair}: entre 00:16 y 00:20 la CPU estuvo entre 30 y 70\,\% y no hubo acciones.
-El costo de la reacción reactiva también es visible. Con 280 usuarios y 2 instancias (CPU 80--86\,\%)
-el p50 subió a 330\,ms durante $\sim$\,5 min hasta que entró la 3.ª instancia (p50 230\,ms). La
-4.ª instancia quedó lista a las 00:15:34, \textbf{6 segundos después de que la carga empezara a
-bajar}: para picos cortos el autoscale reactivo llega tarde, lo que motiva la respuesta a la
-pregunta 2.
-
-\subsection{P2 Pruebas de falla}
-Carga moderada con Locust (40 usuarios, $\approx$ 32 RPS) más un monitor propio
-(\texttt{scripts/probe\_monitor.py}) que envía 10 peticiones/s al balanceador y registra estado
-e instancia (cabecera \texttt{X-Instance}) de cada respuesta. T0 se toma del reloj de la VM
-(falla lógica) o del momento de la orden (falla abrupta).
+\subsection{P2 ¿Sigue funcionando si falla un servidor?}
+Con una carga moderada (40 usuarios), un monitor propio hizo 10 peticiones por segundo y anotó qué
+servidor respondía cada una. Así medimos exactamente cuándo deja de recibir tráfico el servidor
+que falla y cuántas peticiones se pierden.
 
 \input{p2}
 
-\subsection{P3 Pruebas de seguridad}
+\subsection{P3 ¿Resisten los controles de seguridad?}
 \begin{enumerate}
-  \item \textbf{Red no autorizada.} Desde Azure Cloud Shell (IP de salida 128.24.198.36), con un
-        usuario que tiene el rol \emph{Key Vault Secrets Officer}, \texttt{az keyvault secret show}
-        devolvió \texttt{Forbidden / ForbiddenByFirewall} (captura \texttt{12\_p3\_cloudshell\_denegado}). El rol no basta:
-        la red también debe estar autorizada.
-  \item \textbf{Filtrado de salida.} Ejecutado dentro de una instancia con
-        \texttt{az vmss run-command}: \texttt{example.com}, \texttt{github.com} y \texttt{neverssl.com}
-        $\rightarrow$ \emph{timeout} (\texttt{curl} código 28); Key Vault $\rightarrow$ 401 (alcanzable,
-        requiere token); IMDS $\rightarrow$ 200. El endpoint \texttt{/egress-check} de la app
-        responde \texttt{blocked (URLError)}. El puerto 22 escucha dentro de la VM pero es inalcanzable
-        desde Internet (sin IP pública, sin regla NAT, NSG \texttt{Deny-All-Inbound}).
-  \item \textbf{Violación de la política (S5).} Ver Listado~\ref{lst:policy}.
+  \item \textbf{Leer el secreto desde otra red.} Desde Azure Cloud Shell, con un usuario que
+        \emph{sí} tiene permiso sobre el Key Vault, la lectura fue rechazada por el firewall
+        (\texttt{ForbiddenByFirewall}). Tener el permiso no basta: también hay que estar en una
+        red autorizada.
+  \item \textbf{Salir a Internet desde un servidor.} Desde dentro de una instancia, los intentos de
+        conectar con \texttt{example.com} o \texttt{github.com} quedaron sin respuesta, mientras
+        que el Key Vault sí respondió. El puerto SSH existe dentro de la máquina, pero no se puede
+        alcanzar desde fuera.
+  \item \textbf{Romper la política.} Intentamos crear una tarjeta de red con IP pública y un recurso
+        en otra región; Azure rechazó ambos (Listado~\ref{lst:policy}).
 \end{enumerate}
 
-
-\begin{lstlisting}[caption={P3.3 / S5: rechazo de Azure Policy (salida abreviada).},label={lst:policy},language={}]
-$ az network nic create -g rg-caribeshop -n nic-prueba-violacion --vnet-name vnet-caribeshop \
-    --subnet snet-app --public-ip-address pip-prueba-violacion
-ERROR: (RequestDisallowedByPolicy) Resource 'nic-prueba-violacion' was disallowed by policy.
-  policyAssignment: "CaribeShop - Denegar NICs con IP publica"
-  policyDefinition: "Network interfaces should not have public IPs" (83a86a26-...)
-$ az network nsg create -g rg-caribeshop -n nsg-prueba-westus -l westus
-ERROR: (RequestDisallowedByPolicy) Resource 'nsg-prueba-westus' was disallowed by policy.
-  policyAssignment: "CaribeShop - Solo region eastus"  policyDefinition: "Allowed locations"
+\begin{lstlisting}[caption={P3.3: Azure Policy rechaza los recursos prohibidos (salida abreviada).},label={lst:policy},language={}]
+$ az network nic create ... --public-ip-address pip-prueba-violacion
+ERROR: (RequestDisallowedByPolicy) ... "CaribeShop - Denegar NICs con IP publica"
+$ az network nsg create ... -l westus
+ERROR: (RequestDisallowedByPolicy) ... "CaribeShop - Solo region eastus"
 \end{lstlisting}
 
-\subsection{DevSecOps (D1): pull request bloqueado y corregido}
-El PR \#1 agregó una regla \texttt{Allow-SSH-Soporte} (22/tcp desde \texttt{*}) al NSG. Los
-trabajos \texttt{fmt}/\texttt{validate} pasaron, pero \textbf{Checkov falló} con
-\texttt{CKV\_AZURE\_10} en \texttt{infra/network.tf\#L43} y el PR se cerró sin fusionar. El PR \#2
-revierte la regla y documenta el soporte con \texttt{az vmss run-command} (plano de control con
-Entra ID y auditado); su pipeline pasó en verde y se fusionó. Ambos PR y sus ejecuciones están en el repositorio (capturas \texttt{17}--\texttt{20\_d1}).
+\subsection{DevSecOps: un cambio inseguro bloqueado}
+Cada cambio al código pasa por GitHub Actions, que revisa formato, validez y seguridad (Checkov).
+Para comprobarlo abrimos a propósito un pull request que dejaba SSH abierto a Internet: Checkov lo
+detectó (\texttt{CKV\_AZURE\_10}), el pipeline falló y el cambio no entró. Un segundo pull request
+lo corrigió, usando el acceso de soporte de Azure en lugar de SSH, y se aprobó en verde.
 
-
-\subsection{Observabilidad: S6 (KQL) y E5 (alertas)}
-\begin{lstlisting}[caption={S6: consulta KQL sobre la auditoría del Key Vault y resultado.},label={lst:kql},language={}]
+\subsection{Auditoría (S6) y alertas (E5)}
+\begin{lstlisting}[caption={S6: consulta KQL de lecturas del secreto y resultado.},label={lst:kql},language={}]
 AzureDiagnostics
 | where ResourceProvider == 'MICROSOFT.KEYVAULT' and OperationName == 'SecretGet'
-| extend Identidad = iff(isnotempty(identity_claim_xms_mirid_s),
-         strcat('MI ', tostring(split(identity_claim_xms_mirid_s,'/')[-1])), 'operador (usuario)')
-| summarize Lecturas=count(), Primera=min(TimeGenerated) by Identidad,
-         Tipo=identity_claim_idtyp_s, Resultado=ResultSignature, Red=isAddressAuthorized_b
------------------------------------------------------------------------------------------
-Identidad            Tipo  Lecturas  Resultado  Red   Cliente
-MI vmss-caribeshop   app   5         OK         True  Python-urllib/3.12
-operador (usuario)   user  1         OK         True  Terraform (azurerm 4.81)
+| summarize Lecturas=count() by Identidad, Tipo=identity_claim_idtyp_s, Resultado=ResultSignature
+-----------------------------------------------------------------------------------
+Identidad             Tipo   Lecturas   Resultado
+MI vmss-caribeshop    app    5          OK
+operador (usuario)    user   1          OK
 \end{lstlisting}
 
-La identidad que lee el secreto es la del VMSS (\texttt{xms\_mirid =
-.../virtualMachineScaleSets/vmss-caribeshop}, \texttt{oid} = \texttt{vmss\_principal\_id}), desde la
-subred autorizada. Las alertas de E5 se dispararon durante las pruebas y quedaron registradas
-(Tabla~\ref{tab:alertas}); el grupo de acciones envió correo y las notificaciones del autoscale
-llegaron al buzón (captura \texttt{14\_e5\_correo\_autoscale}).
+La consulta confirma que quien lee el secreto es la identidad de los servidores, desde la red
+autorizada. Las alertas se dispararon cuando correspondía y llegaron por correo (Tabla~\ref{tab:alertas}).
 
 \begin{table}[H]
-\centering\small
-\caption{E5: historial de alertas (API \texttt{Microsoft.AlertsManagement}).}
+\centering\small\tablaestilo
+\caption{Alertas disparadas durante las pruebas.}
 \label{tab:alertas}
-\begin{tabular}{@{}llll@{}}
-\toprule
-Regla & Sev. & Disparada (UTC) & Resuelta (UTC) \\
-\midrule
-\texttt{alert-health-probe-below-100} & 2 & 23:14:28 & 23:30:29 \\
-\texttt{alert-vmss-cpu-sustained} & 3 & 23:53:11 & 00:00:32 \\
-\texttt{alert-health-probe-below-100} & 2 & 23:57:27 & 00:05:29 \\
-\texttt{alert-health-probe-below-100} & 2 & 00:12:29 & 00:26:41 \\
-\texttt{alert-health-probe-below-100} & 2 & 00:42:33 (P2.1) & 01:06:46 \\
-\bottomrule
+\begin{tabular}{|l|c|c|c|}
+\hline
+\encab \hd{Alerta} & \hd{Gravedad} & \hd{Se activó (UTC)} & \hd{Se resolvió (UTC)} \\ \hline
+Sonda de salud por debajo de 100\,\% & 2 & 23:14 & 23:30 \\ \hline
+CPU alta sostenida & 3 & 23:53 & 00:00 \\ \hline
+Sonda de salud por debajo de 100\,\% & 2 & 23:57 & 00:05 \\ \hline
+Sonda de salud por debajo de 100\,\% & 2 & 00:12 & 00:26 \\ \hline
+Sonda de salud por debajo de 100\,\% (P2.1) & 2 & 00:42 & 01:06 \\ \hline
 \end{tabular}
 \end{table}
-

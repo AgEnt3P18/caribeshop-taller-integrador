@@ -1,87 +1,91 @@
 % =================================================================
 \section{SLA compuesto estimado}
 % =================================================================
-Solo los componentes en la \textbf{ruta crítica de una petición} afectan la disponibilidad
-percibida. Log Analytics, alertas y el backend de Terraform no están en esa ruta. Se usan
-los SLA publicados por Microsoft:
+Para que una visita funcione deben estar disponibles, al mismo tiempo, la IP pública, el
+balanceador y los servidores. Por eso la disponibilidad total se calcula multiplicando la de cada
+uno (los servicios de monitoreo no influyen, porque no están en el camino de la visita).
 
-\begin{center}\small
-\begin{tabular}{@{}lr@{}}
-\toprule
-Componente (en serie) & SLA \\
-\midrule
-IP pública Standard & 99,99\,\% \\
-Load Balancer Standard & 99,99\,\% \\
-VMSS con instancias en $\geq 2$ zonas de disponibilidad & 99,99\,\% \\
-Key Vault (solo para \texttt{/secret}; la app guarda el valor 60\,s en memoria) & 99,99\,\% \\
-\bottomrule
+\begin{table}[H]
+\centering\small\tablaestilo
+\caption{Disponibilidad garantizada por Microsoft para cada componente.}
+\begin{tabular}{|l|c|}
+\hline
+\encab \hd{Componente} & \hd{SLA} \\ \hline
+IP pública Standard & 99,99\,\% \\ \hline
+Balanceador de carga Standard & 99,99\,\% \\ \hline
+Servidores repartidos en 2 o más zonas & 99,99\,\% \\ \hline
+Key Vault (solo para consultar la contraseña) & 99,99\,\% \\ \hline
 \end{tabular}
-\end{center}
+\end{table}
 
 \[
-SLA_{\text{tienda}} = 0{,}9999^{3} = 99{,}97\,\text{\%}\quad(\approx 13{,}1\ \text{min/mes})\qquad
-SLA_{\text{con KV}} = 0{,}9999^{4} = 99{,}96\,\text{\%}\quad(\approx 17{,}5\ \text{min/mes})
+SLA_{\text{tienda}} = 0{,}9999^{3} = \mathbf{99{,}97\,\text{\%}}\quad(\approx 13\ \text{min de caída al mes})
+\qquad
+SLA_{\text{con Key Vault}} = 0{,}9999^{4} = 99{,}96\,\text{\%}
 \]
 
-Con una sola VM sin zonas (situación del año pasado) el SLA de cómputo sería 99,9\,\% con
-disco Premium (o 99,5\,\% con Standard SSD), es decir hasta 43--216 min/mes de caída
-\emph{solo por la VM}. El SLA compuesto supone que la aplicación es \emph{stateless}; una base de
-datos administrada añadiría su propio término al producto.
+Como comparación, con una sola máquina sin zonas (la situación del año pasado) el SLA sería de
+99,5 a 99,9\,\%, es decir, entre 43 y 216 minutos de caída al mes solo por el servidor.
 
 % =================================================================
-\section{Riesgos aceptados (\texttt{\#checkov:skip})}
+\section{Riesgos aceptados}
 % =================================================================
+Checkov marca algunas configuraciones como mejorables. Las que decidimos no cambiar están
+justificadas en el código con un comentario \texttt{\#checkov:skip}; la Tabla~\ref{tab:riesgos}
+las agrupa por recurso.
+
 \begin{table}[H]
-\centering\footnotesize
-\caption{Cada omisión de Checkov con su justificación, impacto y mitigación (D2).}
+\centering\footnotesize\tablaestilo
+\caption{Riesgos aceptados, su justificación y cómo se mitigan.}
 \label{tab:riesgos}
-\begin{tabularx}{\textwidth}{@{}>{\ttfamily\scriptsize}p{2.5cm}p{2.1cm}YYp{0.85cm}@{}}
-\toprule
-\textbf{Check} & \textbf{Recurso} & \textbf{Justificación / impacto} & \textbf{Mitigación} & \textbf{Riesgo}\\
-\midrule
-CKV\_AZURE\_97 & VMSS & \emph{Encryption at host} exige registrar una \emph{feature} de suscripción. Impacto: caché/temporales del host sin cifrado propio. & Discos ya cifrados en reposo (SSE-PMK); sin datos sensibles en disco. & Bajo\\
-CKV\_AZURE\_178 & VMSS & Falso positivo: se usa llave SSH y \texttt{disable\_password\_authentication=true}. & Puerto 22 no alcanzable (NSG, sin IP pública). & Nulo\\
-CKV\_AZURE\_160 & NSG & HTTP 80 desde Internet es el servicio público. Impacto: tráfico sin TLS. & Producción: App Gateway/Front Door con TLS y WAF. & Medio\\
-CKV2\_AZURE\_32 & Key Vault & Sin \emph{private endpoint}. & Firewall \texttt{Deny} + subred (service endpoint) + IP del operador; RBAC. & Bajo\\
-CKV\_AZURE\_189 & Key Vault & Acceso público habilitado \emph{con} firewall para administrar desde la IP del operador. & Prueba P3.1: \texttt{ForbiddenByFirewall} desde otra red. & Bajo\\
-CKV\_AZURE\_206 & Storage (app y estado) & LRS en lugar de ZRS/GRS. Impacto: pérdida ante falla de datacenter. & Estado con versionado y \emph{soft delete}; en producción ZRS. & Bajo\\
-CKV2\_AZURE\_1 & Storage (app y estado) & Cifrado con llaves de Microsoft (no CMK). & SSE AES-256; CMK agrega costo y gestión de llaves. & Bajo\\
-CKV2\_AZURE\_33 & Storage (app y estado) & Sin \emph{private endpoint}. & Firewall \texttt{Deny}, sin llaves compartidas, TLS 1.2. & Bajo\\
-CKV\_AZURE\_33 & Storage (app y estado) & Logging de colas: la cuenta no usa colas. & N/A. & Nulo\\
-CKV\_AZURE\_59 & Storage (app y estado) & Red pública habilitada con \texttt{default\_action=Deny}. & Solo subred y rangos del operador. & Bajo\\
-CKV2\_AZURE\_21 & Contenedores & Logging de lectura de blobs no requerido. & Diagnostic settings si se almacenan datos de negocio. & Bajo\\
-\bottomrule
+\begin{tabularx}{\textwidth}{|p{2.45cm}|Y|Y|c|}
+\hline
+\encab \hd{Regla} & \hd{Qué se aceptó y por qué} & \hd{Cómo se mitiga} & \hd{Riesgo} \\ \hline
+\grupo{4}{Servidores y red} \\ \hline
+\texttt{CKV\_AZURE\_97} & Sin cifrado extra en el host: requiere activar una función especial en la suscripción & Los discos ya están cifrados & Bajo \\ \hline
+\texttt{CKV\_AZURE\_178} & Falso positivo: se usa llave SSH, no contraseña & El puerto 22 no es alcanzable & Nulo \\ \hline
+\texttt{CKV\_AZURE\_160} & El puerto 80 abierto es la propia tienda; el tráfico no va cifrado & En producción: TLS y WAF & Medio \\ \hline
+\grupo{4}{Key Vault} \\ \hline
+\texttt{CKV2\_AZURE\_32} & Sin conexión privada (\emph{private endpoint}) & Firewall: solo la subred y el operador & Bajo \\ \hline
+\texttt{CKV\_AZURE\_189} & Acceso público habilitado, pero filtrado por firewall & Probado en P3.1: otra red es rechazada & Bajo \\ \hline
+\grupo{4}{Almacenamiento (app y estado de Terraform)} \\ \hline
+\texttt{CKV\_AZURE\_206} & Réplica local, no en otra zona o región & Versionado y papelera de 7 días & Bajo \\ \hline
+\texttt{CKV2\_AZURE\_1} & Cifrado con llaves de Microsoft, no propias & Cifrado AES-256 activo & Bajo \\ \hline
+\texttt{CKV2\_AZURE\_33} & Sin conexión privada & Firewall y sin llaves compartidas & Bajo \\ \hline
+\texttt{CKV\_AZURE\_59} & Acceso público habilitado, filtrado por firewall & Solo la subred y el operador & Bajo \\ \hline
+\texttt{CKV\_AZURE\_33} & Registro de colas: no se usan colas & No aplica & Nulo \\ \hline
+\texttt{CKV2\_AZURE\_21} & Registro de lecturas de blobs no necesario & Activarlo si se guardan datos de negocio & Bajo \\ \hline
 \end{tabularx}
 \end{table}
 
 % =================================================================
 \section{Costo mensual estimado en producción}
 % =================================================================
-Precios de la API pública de precios de Azure (\texttt{eastus}, pago por uso, USD, 730 h/mes):
+Calculado con los precios públicos de Azure en East US (pago por uso, 730 horas al mes):
 
-\begin{center}\small
-\begin{tabular}{@{}lrr@{}}
-\toprule
-Recurso & Precio unitario & USD/mes \\
-\midrule
-VM \texttt{D2s\_v4} Linux (por instancia) & 0,096/h & 70,08 \\
-Disco SO Standard SSD E4 (por instancia) & 2,40/mes & 2,40 \\
-Load Balancer Standard (hasta 5 reglas) & 0,025/h & 18,25 \\
-IP pública Standard & 0,005/h & 3,65 \\
-Log Analytics ($\approx$ 2 GB/mes) & 2,30/GB & 4,60 \\
-Key Vault (operaciones, caché de 60\,s) & 0,03/10k & $<$ 1,50 \\
-Alertas de métrica (2) y Storage & -- & $<$ 1,00 \\
-\midrule
-\textbf{Base fija} (LB, IP, logs, KV, alertas) & & \textbf{$\approx$ 29} \\
-\textbf{Con 2 instancias} (mínimo) & & \textbf{$\approx$ 174} \\
-\textbf{Con 4 instancias fijas} (dimensionado para el pico) & & \textbf{$\approx$ 319} \\
-\bottomrule
+\begin{table}[H]
+\centering\small\tablaestilo
+\caption{Costo mensual estimado (USD).}
+\label{tab:costo}
+\begin{tabular}{|l|r|r|}
+\hline
+\encab \hd{Concepto} & \hd{Precio} & \hd{USD/mes} \\ \hline
+\grupo{3}{Por cada servidor} \\ \hline
+Máquina virtual D2s\_v4 (Linux) & 0,096 por hora & 70,08 \\ \hline
+Disco del sistema & 2,40 al mes & 2,40 \\ \hline
+\grupo{3}{Costos fijos} \\ \hline
+Balanceador de carga & 0,025 por hora & 18,25 \\ \hline
+IP pública & 0,005 por hora & 3,65 \\ \hline
+Registros (Log Analytics, $\approx$\,2 GB) & 2,30 por GB & 4,60 \\ \hline
+Key Vault, alertas y almacenamiento & -- & $<$\,2,50 \\ \hline
+\grupo{3}{Total} \\ \hline
+\textbf{Con 2 servidores} (mínimo) & & \textbf{$\approx$\,174} \\ \hline
+\textbf{Con 4 servidores siempre encendidos} & & \textbf{$\approx$\,319} \\ \hline
+\textbf{Con autoscale durante la campaña} & & \textbf{$\approx$\,202} \\ \hline
 \end{tabular}
-\end{center}
+\end{table}
 
-\textbf{Efecto del autoscale.} Suponiendo una campaña con 4 instancias 4 h/día, 3 instancias
-4 h/día y 2 instancias el resto (16 h/día) se consumen $(4\cdot4+3\cdot4+2\cdot16)\cdot30 =
-1\,800$ instancia-hora/mes, es decir $\approx$ USD 173 de cómputo + 29 fijos $\approx$
-\textbf{USD 202/mes}: \textbf{37\,\% menos} que dimensionar fijo para el pico (USD 319), sin
-perder capacidad cuando se necesita. Reservas de 1 año para las 2 instancias base
-reducirían ese componente en $\sim$\,40\,\% adicional.
+\textbf{Cómo ahorra el autoscale.} Si en la campaña se necesitan 4 servidores 4 horas al día,
+3 servidores otras 4 horas y 2 el resto del día, se pagan unas 1\,800 horas de servidor al mes:
+cerca de \textbf{USD 202}. Es \textbf{un 37\,\% menos} que dejar 4 servidores encendidos todo el
+tiempo (USD 319), sin perder capacidad cuando hace falta.

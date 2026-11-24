@@ -1,109 +1,88 @@
 % =================================================================
 \section{Preguntas de análisis}
 % =================================================================
-\paragraph{1. Instancias para 300 RPS con p95 < 500 ms.}
-Con la capacidad medida (P1.1), una instancia sostiene $\approx$\,\textbf{112 RPS con p95 < 500 ms}
-y $\approx$\,119 RPS con p95 < 1 s, con la CPU cerca del 98\,\%. Operar a ese nivel no deja margen,
-así que se dimensiona al \textbf{70\,\% de CPU} (el umbral del autoscale), $\approx$\,62 RPS por
-instancia: $\lceil 300/62\rceil = 5$ instancias, que consumen exactamente los 10 vCPU de la cuota regional. Para tolerar la pérdida de una
-zona sin violar el objetivo se necesitan 2 instancias por zona (6 en total): al caer una zona
-quedan 4 ($\approx$\,450 RPS). \textbf{Con la cuota actual solo es viable sin margen}: 10 vCPU por región
-equivalen a 5 instancias \texttt{D2s\_v4}. Cambios: (a) solicitar aumento de cuota de la familia
-DSv4 a $\geq$\,16 vCPU; (b) subir \texttt{max\_instances} a 6--8; (c) reducir el costo por petición
-(caché de páginas, CDN para contenido estático, un servidor WSGI compilado en lugar de
-\texttt{http.server}).
+\paragraph{1. ¿Cuántos servidores para 300 peticiones/s con respuestas en menos de medio segundo?}
+Un servidor atiende 112 peticiones/s en menos de medio segundo, pero en ese punto su CPU está
+casi al 100\,\%. Para tener margen conviene trabajar al 70\,\% (unas 62 peticiones/s por
+servidor), lo que da $\lceil 300/62\rceil = $ \textbf{5 servidores}. Eso consume exactamente los
+10 núcleos de nuestra cuota, así que \textbf{es viable, pero sin margen}. Para soportar además la
+caída de una zona harían falta 6 (dos por zona). Lo que cambiaríamos: pedir más cuota a Azure
+(al menos 16 núcleos), subir el máximo del autoscale a 6--8 y hacer la aplicación más eficiente
+(caché de páginas, CDN para imágenes y un servidor web más rápido).
 
-\paragraph{2. Tiempo de reacción del autoscale y pico a las 8:00 p.\,m.}
-Medido en P1.2: desde que la CPU superó el 70\,\% hasta que la nueva instancia recibió
-tráfico pasaron \textbf{5\,min 19\,s hasta la acción y $\approx$\,6\,min hasta que la instancia atendió tráfico}, compuestos por la ventana de evaluación (5 min de promedio), la
-latencia de la métrica ($\sim$\,1--3 min), el aprovisionamiento ($\sim$\,1 min) y cloud-init
-($\sim$\,1 min). Ante un pico súbito ese retraso se traduce en latencia alta y errores. Ajustes:
+\paragraph{2. ¿Cuánto tardó el autoscale y qué hacer ante un pico a las 8:00 p.\,m.?}
+Desde que la CPU superó el 70\,\% pasaron \textbf{5 min 19 s hasta que se ordenó el nuevo servidor}
+y unos 6 minutos hasta que atendió tráfico. Ese tiempo es la suma de la ventana de 5 minutos que
+usa para decidir, la demora de la métrica, la creación de la máquina y su instalación. Ante un pico
+repentino serían varios minutos de lentitud. Proponemos:
 \begin{itemize}
-  \item \textbf{Perfil programado} (\emph{recurrence}) de 19:30 a 22:30 (hora de Colombia) con
-        \texttt{minimum = 4}: la capacidad ya está lista cuando empieza la campaña.
-  \item \textbf{Autoscale predictivo} (VMSS, métrica de CPU): pronostica a partir de 7 días de
-        historia y escala por adelantado; primero en modo \emph{forecast only} para validarlo.
-  \item Reglas reactivas más agresivas solo en ese perfil: ventana \texttt{PT2M}, umbral 60\,\%,
-        \texttt{ChangeCount = 2}.
+  \item \textbf{Perfil programado:} de 7:30 a 10:30 p.\,m. mantener al menos 4 servidores, para que
+        la capacidad ya esté lista cuando empiece la campaña.
+  \item \textbf{Autoscale predictivo:} Azure aprende de los últimos 7 días y agrega servidores antes
+        del pico. Primero lo usaríamos solo en modo pronóstico para validarlo.
+  \item \textbf{Reglas más rápidas} solo en ese horario: decidir con 2 minutos de datos, umbral del
+        60\,\% y agregar 2 servidores a la vez.
 \end{itemize}
 
-\paragraph{3. Punto único de falla.}
-Dentro de la región no hay un SPOF de infraestructura: IP pública, LB y VMSS son
-zonal-redundantes. El \textbf{punto único de falla es la región \texttt{eastus}} (todo el
-stack vive en ella) y, a nivel lógico, el \textbf{Key Vault} (una sola instancia regional; la
-caché de 60\,s solo amortigua fallas cortas). También lo es la cuota: si una zona cae, el
-reemplazo de capacidad depende de que haya vCPU disponibles. Eliminar el SPOF regional
-requiere un despliegue activo-pasivo en una segunda región (p.\,ej. \texttt{centralus}) con
-Azure Front Door: $\approx$\,USD 35/mes de Front Door Standard + tráfico, más el stack secundario
-(mínimo $\approx$\,USD 174/mes con 2 instancias, o $\approx$\,USD 100 en frío con 1 instancia).
-Es decir, $+$\,USD 135--210/mes, del 75\,\% al 120\,\% del costo base.
+\paragraph{3. ¿Cuál es ahora el punto único de falla?}
+Dentro de la región no hay uno: la IP, el balanceador y los servidores están repartidos en tres
+zonas. El punto único de falla es \textbf{la propia región East US}, porque todo vive en ella, y en
+menor medida \textbf{el Key Vault}, que es uno solo (la aplicación guarda la contraseña 60\,s en
+memoria, lo que solo cubre fallas cortas). Eliminarlo implica una copia de la plataforma en otra
+región con Azure Front Door delante: unos USD 35/mes de Front Door más la segunda plataforma
+(USD 100 a 174/mes). En total, entre 135 y 210 dólares más al mes, casi duplicar el costo.
 
-\paragraph{4. Si un atacante obtiene ejecución de código en una instancia.}
+\paragraph{4. Si un atacante lograra ejecutar código en un servidor, ¿qué podría hacer?}
+\textbf{Podría} leer la contraseña de la base de datos (es la única que ese servidor puede leer),
+alterar las respuestas de ese servidor o consumir su CPU. \textbf{No podría}:
 \begin{itemize}
-  \item \textbf{Podría:} leer \texttt{db-password} usando la identidad administrada; alterar las
-        respuestas de esa instancia; consumir CPU; consultar IMDS.
-  \item \textbf{No podría:}
-  \begin{itemize}
-    \item leer otros secretos, llaves o certificados: el rol tiene alcance a un solo secreto;
-    \item modificar la infraestructura: la identidad no tiene roles en ARM;
-    \item entrar o moverse por SSH/RDP: no hay IP pública y el NSG niega toda entrada salvo el puerto 80;
-    \item exfiltrar a un servidor propio en Internet: el NSG niega el egress (prueba P3.2);
-    \item leer o escribir en el Storage: no tiene rol de datos y las llaves compartidas están deshabilitadas;
-    \item crear una NIC con IP pública: no tiene permisos y además la política lo niega.
-  \end{itemize}
-  \item \textbf{Riesgo residual:} la etiqueta \texttt{Storage.eastus} permite salir hacia
-        \emph{cualquier} cuenta de almacenamiento de la región, incluso una del atacante, lo que
-        abre un canal de exfiltración. Mitigación: \emph{service endpoint policies}, \emph{private
-        endpoints} o Azure Firewall con filtrado FQDN.
-  \item \textbf{Detección:} las lecturas del secreto quedan registradas en
-        \texttt{AzureDiagnostics} (S6). Tras un incidente se rota el secreto con
-        \texttt{terraform apply -replace=random\_password.db}.
+  \item leer otros secretos: el permiso está limitado a un solo secreto;
+  \item cambiar la infraestructura: el servidor no tiene permisos de administración en Azure;
+  \item entrar a otros servidores por SSH: no hay IPs públicas y la red solo deja pasar la web;
+  \item enviar datos a un servidor propio en Internet: la salida está bloqueada (prueba P3.2);
+  \item usar el almacenamiento: no tiene permisos y las llaves de acceso están desactivadas.
 \end{itemize}
+\textbf{Riesgo que queda:} la salida permitida hacia Storage abarca cualquier cuenta de la región,
+incluso una del atacante. Se cerraría con conexiones privadas o un firewall que filtre por dominio.
+Además, cada lectura del secreto queda registrada (S6), y tras un incidente se puede cambiar la
+contraseña con un solo comando de Terraform.
 
-\paragraph{5. ¿Por qué el escaneo en el pipeline no sustituye a Azure Policy, ni viceversa?}
-Checkov es \emph{preventivo y temprano}: revisa el código en cada PR, da retroalimentación antes
-del despliegue y cubre buenas prácticas que no son de Azure (p.\,ej. \texttt{fmt}). Pero solo ve
-lo que pasa por el repositorio: un cambio hecho desde el portal, la CLI o en otro repositorio
-no lo atraviesa, y un \texttt{\#checkov:skip} puede silenciarlo. Azure Policy actúa en el plano
-de control de ARM y aplica \emph{a cualquier cliente} (portal, CLI, Terraform o un atacante con
-credenciales), además de auditar el inventario existente. Su limitación es que da la
-retroalimentación tarde (al hacer \emph{apply}) y no conoce el contexto del código. Ambas capas
-se complementan; P3.3 muestra que Policy bloquea incluso una petición que no viene de
-Terraform.
+\paragraph{5. ¿Por qué Checkov en el pipeline no reemplaza a Azure Policy, ni al revés?}
+Porque protegen momentos distintos. \textbf{Checkov} revisa el código \emph{antes} de desplegar y
+avisa temprano, pero solo ve lo que pasa por el repositorio: un cambio hecho a mano en el portal no
+lo atraviesa, y un \texttt{\#checkov:skip} puede silenciarlo. \textbf{Azure Policy} actúa
+\emph{dentro de Azure} y bloquea a cualquiera, venga de Terraform, del portal o de un atacante, pero
+solo avisa en el momento de crear el recurso. Juntas cubren ambos frentes: en P3.3 la política
+rechazó recursos creados por fuera de Terraform.
 
-\paragraph{6. El estado de Terraform contiene secretos.}
-El estado guarda en texto claro el valor de \texttt{random\_password.db} (el secreto), la llave
-privada SSH de \texttt{tls\_private\_key} y la topología. Protección aplicada:
+\paragraph{6. El estado de Terraform contiene secretos: ¿cómo se protegió?}
+El archivo de estado guarda la contraseña generada, la llave SSH y el mapa de la infraestructura.
+Lo protegimos así:
 \begin{itemize}
-  \item backend remoto, nunca local ni en Git (\texttt{.gitignore});
-  \item cuenta sin llaves compartidas: acceso solo con Entra ID y RBAC (\emph{Storage Blob Data
-        Contributor} únicamente para el operador);
-  \item firewall limitado a las IPs del operador, TLS 1.2 y cifrado en reposo;
-  \item versionado y \emph{soft delete} de 7 días;
-  \item bloqueo de estado mediante \emph{lease} de blob.
+  \item vive en Azure, nunca en el computador ni en Git;
+  \item la cuenta no acepta llaves de acceso: solo entra quien tenga identidad y permiso en Azure;
+  \item firewall limitado a nuestras IPs, cifrado y conexión segura;
+  \item historial de versiones y papelera de 7 días, y bloqueo para que dos personas no lo editen
+        a la vez.
 \end{itemize}
-Si se filtrara: el atacante tendría la contraseña de la base de datos y la llave SSH (inútil
-sin acceso de red al puerto 22) y conocería la topología. Respuesta: rotar el secreto
-(\texttt{-replace}), regenerar la llave, revisar los logs de acceso a la cuenta y al Key Vault.
-Mejora recomendada: usar atributos \emph{write-only} (\texttt{value\_wo} en
-\texttt{azurerm\_key\_vault\_secret}, Terraform $\geq$ 1.11) y \emph{ephemeral resources} para que el
-secreto no llegue al estado.
+Si se filtrara, el atacante tendría la contraseña y la llave SSH (inútil, porque el puerto 22 no es
+alcanzable) y conocería la arquitectura. Habría que cambiar la contraseña, regenerar la llave y
+revisar los registros de acceso. Como mejora, las versiones recientes de Terraform permiten que
+los secretos nunca se guarden en el estado.
 
 % =================================================================
 \section{Conclusiones}
 % =================================================================
-La plataforma resuelve los tres incidentes de CaribeShop con evidencia medida. Ante la
-\textbf{saturación}, el autoscale pasó de 2 a 4 instancias y volvió a 2 con 0,55\,\% de error en
-207\,435 peticiones. Ante la \textbf{falla de una máquina}, una instancia no sana salió del
-balanceador en 8\,s sin errores adicionales, y tras una eliminación abrupta la capacidad mínima
-volvió en 109\,s. Ante la \textbf{auditoría}, no quedan secretos en el código ni puertos de
-administración expuestos, y un PR que abría SSH fue bloqueado por el pipeline.
+La plataforma resuelve los tres problemas de CaribeShop, y cada solución se comprobó con datos.
+Ante la \textbf{saturación}, el autoscale pasó de 2 a 4 servidores y volvió a 2 con solo 0,55\,\%
+de errores. Ante la \textbf{falla de una máquina}, un servidor enfermo salió de circulación en
+8 segundos sin que los usuarios lo notaran, y cuando borramos uno de golpe la capacidad se
+recuperó en menos de 2 minutos. Ante la \textbf{auditoría}, ya no hay secretos en el código ni
+accesos de administración expuestos, y el pipeline bloqueó un cambio que intentaba abrir SSH.
 
-La seguridad se construyó en capas independientes y cada una se demostró con una prueba
-negativa: firewall del Key Vault, RBAC con alcance a un único secreto, egress denegado y Azure
-Policy. Medir la capacidad (119 RPS por instancia) permitió justificar los umbrales del
-autoscale y dimensionar el escenario de 300 RPS. La principal limitación observada es el retraso
-de $\approx$\,5--6\,min del autoscale reactivo, que para la campaña se mitiga con un perfil
-programado o autoscale predictivo. Todos los recursos se eliminaron con \texttt{terraform destroy}
-y se verificó en el portal. Las capturas y salidas de comandos que respaldan cada requisito están
-en \texttt{evidencias/} del repositorio.
+La seguridad se construyó en capas, y cada una se puso a prueba intentando romperla. Medir cuánto
+aguanta un servidor nos permitió justificar la configuración del autoscale y responder cuántos se
+necesitan para 300 peticiones por segundo. La principal limitación es que el autoscale tarda unos
+5 a 6 minutos en reaccionar, algo que en una campaña se resuelve programándolo con anticipación.
+Al terminar eliminamos todos los recursos con \texttt{terraform destroy}. Las capturas y salidas
+de comandos que respaldan cada requisito están en la carpeta \texttt{evidencias/} del repositorio.

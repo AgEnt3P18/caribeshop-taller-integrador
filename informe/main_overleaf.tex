@@ -16,8 +16,7 @@
 \usepackage{longtable}
 \usepackage{array}
 \usepackage{multirow}
-\usepackage{xcolor}
-\usepackage{colortbl}
+\usepackage[table]{xcolor}
 \usepackage{listings}
 \usepackage{caption}
 \usepackage{subcaption}
@@ -27,7 +26,7 @@
 \usepackage{titlesec}
 \usepackage{pifont}
 \usepackage{tikz}
-\usetikzlibrary{positioning,fit,backgrounds,arrows.meta,shapes.geometric}
+\usetikzlibrary{positioning,fit,backgrounds,arrows.meta,shapes.geometric,calc}
 \usepackage{hyperref}
 
 \definecolor{utbblue}{HTML}{0B1F4D}
@@ -35,6 +34,17 @@
 \definecolor{codebg}{HTML}{F5F7FA}
 \definecolor{okgreen}{HTML}{15803D}
 \definecolor{badred}{HTML}{B91C1C}
+\definecolor{thead}{HTML}{0E3B4F}
+\definecolor{turq}{HTML}{0E8C86}
+\definecolor{rowalt}{HTML}{EEF4F7}
+\definecolor{grp}{HTML}{D5EBE9}
+
+% --- estilo de tablas: encabezado oscuro, lineas entre filas, filas alternas ---
+\newcommand{\hd}[1]{\textcolor{white}{\textbf{#1}}}
+\newcommand{\tablaestilo}{\arrayrulecolor{gray!45}\setlength{\arrayrulewidth}{0.5pt}%
+  \renewcommand{\arraystretch}{1.55}\rowcolors{2}{white}{rowalt}}
+\newcommand{\encab}{\rowcolor{thead}}
+\newcommand{\grupo}[2]{\multicolumn{#1}{|l|}{\cellcolor{grp}\textbf{\textcolor{thead}{#2}}}}
 
 \hypersetup{colorlinks=true,linkcolor=utbblue,urlcolor=azure,citecolor=utbblue}
 \captionsetup{font=small,labelfont=bf}
@@ -104,85 +114,82 @@ Cristian Matteo Benitez Montes\\[0.3em]}
 % =================================================================
 \section{Introducción y alcance}
 % =================================================================
-CaribeShop, tienda en línea con sede en Cartagena, sufrió el año pasado dos caídas
-(saturación durante una promoción y falla de su única máquina virtual) y una auditoría
-encontró la contraseña de la base de datos en el repositorio y el puerto SSH abierto a
-Internet. Este informe documenta el diseño, el despliegue \emph{como código} y la
-validación empírica de una plataforma en Microsoft Azure que corrige esos tres problemas:
-es \textbf{segura}, \textbf{escala automáticamente} y \textbf{sigue funcionando} cuando falla
-un componente.
+CaribeShop es una tienda en línea de Cartagena que el año pasado tuvo tres problemas: se cayó
+durante una promoción porque no aguantó la demanda, volvió a caerse porque dependía de una sola
+máquina virtual, y una auditoría encontró la contraseña de la base de datos dentro del código y
+el acceso remoto (SSH) abierto a Internet.
+
+Este informe describe cómo diseñamos, desplegamos y probamos en Microsoft Azure una plataforma
+que corrige esos tres problemas: es \textbf{segura}, \textbf{crece sola} cuando aumenta la demanda
+y \textbf{sigue funcionando} cuando falla una de sus partes. Toda la infraestructura se creó con
+código (Terraform) y cada requisito se comprobó con una prueba.
 
 \begin{itemize}
   \item \textbf{Repositorio:} \url{https://github.com/AgEnt3P18/caribeshop-taller-integrador}
-  \item \textbf{Herramientas:} Terraform 1.17 (azurerm 4.x), Azure CLI 2.93, GitHub Actions,
-        Checkov 3.4, Locust 2.x, Python 3 (solo biblioteca estándar en la app).
-  \item \textbf{Región:} \texttt{eastus} (zonas 1, 2 y 3). Tamaño \texttt{Standard\_D2s\_v4}
-        (2 vCPU); la cuota regional de la suscripción es de 10 vCPU.
+  \item \textbf{Herramientas:} Terraform, Azure CLI, GitHub Actions, Checkov (revisión de seguridad
+        del código) y Locust (pruebas de carga).
+  \item \textbf{Región:} East US, repartiendo los servidores en sus tres zonas de disponibilidad.
 \end{itemize}
 
 % =================================================================
 \section{Arquitectura y decisiones de diseño}
 % =================================================================
+La Figura~\ref{fig:arq} resume el recorrido de una visita: entra por un balanceador de carga, que
+la envía a uno de los servidores sanos; los servidores viven en una red privada, repartidos en
+tres zonas, y consultan la contraseña en un Key Vault. Todo queda registrado para monitoreo.
+
 \begin{figure}[H]
 \centering
-\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
-  font=\footnotesize,
-  box/.style={draw=azure, fill=azure!6, rounded corners=2pt, minimum height=8mm, align=center, inner sep=3pt},
-  sec/.style={draw=badred!70, fill=badred!5, rounded corners=2pt, minimum height=8mm, align=center, inner sep=3pt},
-  obs/.style={draw=okgreen!70, fill=okgreen!6, rounded corners=2pt, minimum height=8mm, align=center, inner sep=3pt},
-  arr/.style={-{Stealth[length=2mm]}, thick, color=gray!70!black},
-  lbl/.style={font=\scriptsize, color=gray!50!black}
+  font=\small,
+  caja/.style={draw=thead, line width=0.9pt, fill=white, rounded corners=4pt, minimum height=13mm,
+               minimum width=31mm, align=center},
+  serv/.style={fill=turq, text=white, rounded corners=3pt, minimum width=30mm, minimum height=9mm,
+               font=\small\bfseries},
+  flecha/.style={-{Stealth[length=2.6mm]}, line width=1.1pt, color=thead!80}
 ]
-\node[box] (inet) {Internet\\ \scriptsize usuarios / Locust};
-\node[box, below=6mm of inet] (pip) {IP pública Standard\\ \scriptsize zonal-redundante (1·2·3)};
-\node[box, below=6mm of pip] (lb) {Load Balancer Standard\\ \scriptsize regla 80 · sonda HTTP \texttt{/health} 5\,s×2 · SNAT de salida};
-\node[box, below=10mm of lb, xshift=-38mm] (v1) {VM zona 1};
-\node[box, right=4mm of v1] (v2) {VM zona 2};
-\node[box, right=4mm of v2] (v3) {VM zona 3};
-\node[box, right=4mm of v3, dashed] (v4) {VM n\\ \scriptsize (autoscale)};
-\node[lbl, below=1mm of v2, xshift=12mm, align=center] (vinfo) {VMSS \texttt{vmss-caribeshop}: min 2 · max 4 · identidad administrada\\ sin IP pública · reparación automática · cloud-init};
+\node[caja] (u) {\textbf{Clientes}\\ desde Internet};
+\node[caja, right=11mm of u] (lb) {\textbf{Balanceador}\\ \textbf{de carga}\\ \footnotesize revisa cada servidor\\ \footnotesize cada 5 segundos};
+\node[serv, right=17mm of lb, yshift=12mm] (v1) {Servidor · zona 1};
+\node[serv, below=3mm of v1] (v2) {Servidor · zona 2};
+\node[serv, below=3mm of v2] (v3) {Servidor · zona 3};
 \begin{scope}[on background layer]
-  \node[draw=badred!60, dashed, rounded corners, fill=gray!4, fit=(v1)(v4)(vinfo), inner sep=4mm,
-        label={[lbl, anchor=south west, align=left]north west:{\textbf{snet-app} 10.20.1.0/24 · NSG: entra solo 80 (Internet, AzureLoadBalancer)\\ sale solo 443 a AzureKeyVault / AzureMonitor / Storage; Internet: Deny}}] (snet) {};
+  \node[draw=badred!70, dashed, line width=0.9pt, rounded corners=6pt, fill=badred!4,
+        fit=(v1)(v3), inner xsep=5mm, inner ysep=4mm] (red) {};
 \end{scope}
-\node[sec, below=12mm of snet.south west, anchor=north west, xshift=2mm] (kv) {Key Vault (RBAC)\\ \scriptsize purge protection · firewall\\ \scriptsize secreto con expiración};
-\node[sec, right=6mm of kv] (st) {Storage\\ \scriptsize sin llaves · firewall\\ \scriptsize TLS 1.2};
-\node[obs, right=6mm of st] (law) {Log Analytics\\ \scriptsize AuditEvent · autoscale · métricas};
-\node[obs, right=6mm of law] (al) {Alertas Monitor\\ \scriptsize sonda<100\,\% · CPU\\ \scriptsize correo};
-\draw[arr] (inet) -- node[lbl, right]{HTTP 80} (pip);
-\draw[arr] (pip) -- (lb);
-\draw[arr] (lb) -- (snet.north);
-\draw[arr] (snet.south -| kv.north) -- node[lbl, left, align=right]{service endpoint\\ token IMDS} (kv.north);
-\draw[arr] (snet.south -| st.north) -- (st.north);
-\draw[arr, dashed] (kv) to[bend right=25] (law);
-\draw[arr, dashed] (law) -- (al);
-\node[draw=utbblue, fill=utbblue!5, rounded corners, below=6mm of st, xshift=18mm, align=center, font=\scriptsize] (gov)
-  {\textbf{Gobierno:} Azure Policy (Deny): NIC sin IP pública · solo \texttt{eastus}\\
-   \textbf{DevSecOps:} GitHub Actions: \texttt{fmt -check} · \texttt{validate} · Checkov bloqueante\\
-   \textbf{Estado:} backend \texttt{azurerm} remoto (Entra ID, sin llaves, firewall, versionado)};
-\end{tikzpicture}}
-\caption{Arquitectura desplegada (todo con Terraform).}
+\node[font=\footnotesize\bfseries, color=badred!85, anchor=south] at ([yshift=0.5mm]red.north) {Red privada · solo entra tráfico web};
+\node[font=\footnotesize\itshape, color=thead, anchor=north] at ([yshift=-1mm]red.south)
+  {de 2 a 4 servidores, se agregan solos};
+\node[caja, right=13mm of red.east, yshift=12mm] (kv) {\textbf{Key Vault}\\ \footnotesize guarda la contraseña};
+\node[caja, right=13mm of red.east, yshift=-12mm] (mon) {\textbf{Monitoreo}\\ \footnotesize registros y alertas\\ \footnotesize por correo};
+\draw[flecha] (u) -- (lb);
+\draw[flecha] (lb) -- (red.west |- lb);
+\draw[flecha] (red.east |- kv) -- (kv);
+\draw[flecha] (red.east |- mon) -- (mon);
+\node[fill=thead, text=white, rounded corners=4pt, inner xsep=4mm, inner ysep=2.2mm,
+      font=\footnotesize, align=center, anchor=north] (gob)
+  at ([yshift=-10mm]$(u.west |- red.south)!0.5!(kv.east |- red.south)$)
+  {Todo se crea con \textbf{Terraform} \quad·\quad cada cambio lo revisa \textbf{GitHub Actions + Checkov}\\
+   \textbf{Azure Policy} bloquea lo prohibido \quad·\quad el estado de Terraform vive protegido en Azure};
+\end{tikzpicture}
+\caption{Arquitectura desplegada en Azure.}
 \label{fig:arq}
 \end{figure}
 
 \begin{table}[H]
-\centering\small
-\caption{Decisiones de diseño y justificación.}
+\centering\small\tablaestilo
+\caption{Principales decisiones de diseño.}
 \label{tab:decisiones}
-\begin{tabularx}{\textwidth}{@{}p{3.6cm}Y@{}}
-\toprule
-\textbf{Decisión} & \textbf{Justificación} \\
-\midrule
-Load Balancer Standard (no Application Gateway) & Cumple E2 con sonda dedicada y es zonal-redundante; la app no necesita reglas L7. App Gateway + WAF ($\approx$\,USD 320/mes en WAF\_v2) se recomienda para producción (TLS y OWASP). \\
-\texttt{Standard\_D2s\_v4} en 3 zonas & Las series B/Basv2/DASv5 no tenían cuota o estaban restringidas por zona en la suscripción; Dsv4 tiene cuota (10 vCPU) y las 3 zonas disponibles en \texttt{eastus}. CPU no limitada por créditos (mediciones estables). \\
-App en Python \emph{stdlib}, 1 proceso por vCPU (\texttt{SO\_REUSEPORT}) & Sin \texttt{pip} ni paquetes: la VM no necesita salir a Internet, lo que permite \textbf{denegar todo el egress}. Un proceso por vCPU evita el límite del GIL y hace que la métrica de CPU represente la carga real (necesario para el autoscale). \\
-Rol \emph{Key Vault Secrets User} con alcance al \textbf{secreto} & Mínimo privilegio más estricto que asignar el rol al vault completo: la identidad solo puede leer \texttt{db-password}. \\
-Egress denegado por NSG + service tags & Filtrado de salida sin costo de Azure Firewall ($\approx$\,USD 900/mes). Se permiten solo \texttt{AzureKeyVault}, \texttt{AzureMonitor} y \texttt{Storage.eastus} (extensiones del agente). \\
-Reparación automática con la sonda del LB & No requiere la extensión Application Health; período de gracia de 10 min (mínimo permitido) para no reemplazar instancias que aún ejecutan cloud-init. \\
-Dos políticas Deny integradas & \emph{Network interfaces should not have public IPs} refuerza S2 a nivel de plataforma; \emph{Allowed locations} evita recursos fuera de la región. \\
-Backend remoto con \texttt{use\_azuread\_auth} & La cuenta de estado tiene \texttt{shared\_access\_key\_enabled=false}: el estado solo se lee con identidad de Entra ID y RBAC, desde IPs autorizadas. \\
-\bottomrule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash\bfseries}p{4.6cm}|Y|}
+\hline
+\encab \hd{Qué elegimos} & \hd{Por qué} \\ \hline
+Servidores en las 3 zonas de East US & Si una zona falla, las otras siguen atendiendo. Elegimos el tamaño D2s\_v4 porque era el que tenía cupo disponible en las tres zonas. \\ \hline
+Balanceador de carga Standard & Revisa la salud de cada servidor y deja de enviarle tráfico si falla. Para producción se recomienda además un firewall de aplicaciones web (WAF). \\ \hline
+Aplicación sin librerías externas & Así los servidores no necesitan salir a Internet, y pudimos \textbf{bloquear toda la salida}. Usa un proceso por núcleo para aprovechar toda la CPU. \\ \hline
+Contraseña en Key Vault & La aplicación la lee con su propia identidad y \textbf{solo tiene permiso sobre ese único secreto}. \\ \hline
+Bloqueo de salida con la red (NSG) & Solo se permite hablar con Key Vault, Monitor y Storage. Es gratis, frente a $\approx$\,USD 900/mes de un firewall dedicado. \\ \hline
+Reparación automática & Si un servidor queda enfermo más de 10 minutos, Azure lo reemplaza solo. \\ \hline
+Dos políticas de Azure (Deny) & Prohíben servidores con IP pública y recursos fuera de East US, sin importar desde dónde se creen. \\ \hline
 \end{tabularx}
 \end{table}
 
@@ -190,151 +197,137 @@ Backend remoto con \texttt{use\_azuread\_auth} & La cuenta de estado tiene \text
 \section{Implementación paso a paso}
 % =================================================================
 \begin{enumerate}
-  \item \textbf{Autenticación.} \texttt{az login} interactivo sobre el inquilino de la suscripción. El
-        flujo \emph{device code} fue bloqueado por los \emph{security defaults} de Entra ID
-        (\texttt{AADSTS530035}); se usó el flujo de código de autorización (PKCE).
-  \item \textbf{Selección de región/tamaño} con \texttt{az vm list-usage} y \texttt{az vm list-skus}
-        (cuotas por familia y restricciones por zona).
-  \item \textbf{Bootstrap del backend} (\texttt{bootstrap/main.tf}): RG, cuenta
-        \texttt{stcstfstate*} sin llaves, versionado, \emph{soft delete}, firewall y rol
-        \emph{Storage Blob Data Contributor} para el operador.
-  \item \textbf{Plataforma} (\texttt{infra/}): \texttt{terraform init -backend-config=backend.hcl},
-        \texttt{plan -out} y \texttt{apply}: \textbf{33 recursos} creados en un solo \emph{apply}.
-  \item \textbf{Configuración automática} (D3): \texttt{cloud-init.yaml.tftpl} escribe la app,
-        su configuración no sensible y un servicio \texttt{systemd}. Un cambio de la app se
-        desplegó con \texttt{terraform apply} + \texttt{az vmss reimage}, sin pasos manuales.
-  \item \textbf{Validación} de configuración (\texttt{scripts/collect\_evidence.sh}), pruebas
-        P1--P3 y recolección de evidencias en \texttt{evidencias/}.
+  \item \textbf{Acceso a Azure.} Iniciamos sesión con la CLI. El método por código de dispositivo
+        estaba bloqueado por la seguridad predeterminada de la cuenta, así que usamos el inicio
+        de sesión por navegador.
+  \item \textbf{Región y tamaño.} Revisamos las cuotas de la suscripción (10 núcleos por región)
+        y qué tamaños estaban disponibles en las tres zonas.
+  \item \textbf{Estado de Terraform.} Creamos primero una cuenta de almacenamiento protegida, sin
+        llaves de acceso, para guardar el estado de Terraform fuera de Git.
+  \item \textbf{Despliegue.} Con \texttt{terraform plan} y \texttt{apply} se crearon los 33 recursos
+        de una sola vez.
+  \item \textbf{Configuración automática.} Cada servidor se instala solo al arrancar
+        (\emph{cloud-init}); cuando cambiamos la aplicación bastó con volver a aplicar y reiniciar
+        las instancias, sin entrar a ninguna máquina.
+  \item \textbf{Pruebas y evidencias.} Ejecutamos las pruebas P1, P2 y P3 y guardamos los resultados
+        en la carpeta \texttt{evidencias/} del repositorio.
 \end{enumerate}
 
-
-\textbf{Justificación de la histéresis y los cooldowns.} Entre 30\,\% y 70\,\% no hay acción, lo
-que evita oscilaciones (\emph{flapping}). El scale-out reacciona en 5 min y su cooldown
-(5 min) cubre el arranque de una instancia ($\approx$\,40\,s de aprovisionamiento + $\approx$\,30--60\,s de cloud-init) más la estabilización de la métrica.
-El scale-in es deliberadamente más lento (ventana y cooldown de 10 min): retirar capacidad
-por error es más costoso (latencia, errores) que mantenerla unos minutos más.
+\textbf{Por qué el autoscale usa umbrales distintos para subir y bajar.} Agrega un servidor cuando
+la CPU pasa del 70\,\% durante 5 minutos y quita uno cuando baja del 30\,\% durante 10 minutos.
+Entre ambos valores no hace nada, lo que evita que agregue y quite servidores sin parar. Bajar es
+más lento a propósito: quitar capacidad antes de tiempo es peor que mantenerla unos minutos más.
+Tras cada acción espera 5 minutos (al subir) o 10 (al bajar), el tiempo que tarda una instancia
+nueva en arrancar y estabilizarse.
 
 % =================================================================
 \section{Trazabilidad de requisitos}
 % =================================================================
 \begin{table}[H]
-\centering\scriptsize
-\caption{Requisito $\rightarrow$ archivo/recurso de Terraform $\rightarrow$ evidencia.}
+\centering\footnotesize\tablaestilo
+\caption{Cada requisito, dónde se implementa y cómo se comprobó.}
 \label{tab:traz}
-\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}p{6.4cm} Y@{}}
-\toprule
-\textbf{ID} & \textbf{Terraform} & \textbf{Evidencia} \\
-\midrule
-S1 & \texttt{providers.tf} (\texttt{backend "azurerm"}), \texttt{bootstrap/main.tf}, \texttt{.gitignore} & Estado en \texttt{stcstfstate8n6alz/tfstate}; historial Git sin \texttt{*.tfstate}/\texttt{*.tfvars}; secreto generado por \texttt{random\_password} \\
-S2 & \texttt{network.tf}: NSG \texttt{app}; VMSS sin bloque \texttt{public\_ip} & \texttt{evidencias/cli/s2\_*.txt}: NICs solo con IP privada; única IP pública = LB; 22/tcp inalcanzable; captura \texttt{04\_nsg\_reglas} \\
-S3 & \texttt{keyvault.tf}: RBAC, purge protection, \texttt{network\_acls}, expiración & \texttt{GET /secret} $\rightarrow$ longitud 32, SHA-256 \texttt{d1f1b00018c3}; captura \texttt{05\_kv\_firewall} \\
-S4 & \texttt{keyvault.tf}: \texttt{vmss\_secret\_reader} & \texttt{az role assignment list}: un único rol, alcance al secreto \\
-S5 & \texttt{policy.tf}: 2 asignaciones de política & \texttt{RequestDisallowedByPolicy} (Lst.~\ref{lst:policy}) \\
-S6 & \texttt{monitoring.tf}: diagnostic setting \texttt{kv} & Consulta KQL (Lst.~\ref{lst:kql}) \\
-E1 & \texttt{compute.tf}: \texttt{zones=["1","2","3"]}, \texttt{zone\_balance} & Instancias distribuidas en zonas 1, 2 y 3 (\texttt{evidencias/cli/e1\_*}; captura \texttt{13\_vmss\_instances}) \\
-E2 & \texttt{loadbalancer.tf}: sonda \texttt{health} (\texttt{/health}) & Métrica \emph{Health Probe Status} (Fig.~\ref{fig:p2logica}) \\
-E3 & \texttt{compute.tf}: autoscale; \texttt{ignore\_changes=[instances]} & Historial de autoscale (Fig.~\ref{fig:stair}) \\
-E4 & \texttt{compute.tf}: \texttt{automatic\_instance\_repair} & \texttt{repairVM} 00:50:19 reemplaza la instancia no sana (Fig.~\ref{fig:p2logica}) \\
-E5 & \texttt{monitoring.tf}: alertas \texttt{probe} y \texttt{cpu}; action group & Historial de alertas (Tabla~\ref{tab:alertas}) y correo recibido \\
-D1 & \texttt{.github/workflows/iac-security.yml} & PR \#1 fallido por \texttt{CKV\_AZURE\_10} y PR \#2 corregido (capturas \texttt{18\_d1}, \texttt{20\_d1}) \\
-D2 & \texttt{\#checkov:skip} en cada recurso & Tabla~\ref{tab:riesgos} \\
-D3 & \texttt{cloud-init.yaml.tftpl} + \texttt{app/app.py} & Reimage sin pasos manuales \\
-\bottomrule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{4.2cm}|>{\raggedright\arraybackslash}p{3.7cm}|Y|}
+\hline
+\encab \hd{Requisito} & \hd{Dónde se implementa} & \hd{Evidencia} \\ \hline
+\grupo{3}{Seguridad} \\ \hline
+S1 · Todo en Terraform & \texttt{providers.tf}, \texttt{bootstrap/} & Estado remoto; Git sin estado ni credenciales \\ \hline
+S2 · Red mínima & \texttt{network.tf} (NSG) & Servidores sin IP pública; SSH inalcanzable \\ \hline
+S3 · Key Vault & \texttt{keyvault.tf} & \texttt{/secret} muestra solo longitud y huella \\ \hline
+S4 · Mínimo privilegio & \texttt{keyvault.tf} & Un único rol, limitado al secreto \\ \hline
+S5 · Azure Policy & \texttt{policy.tf} & Rechazo \texttt{RequestDisallowedByPolicy} (Lst.~\ref{lst:policy}) \\ \hline
+S6 · Auditoría & \texttt{monitoring.tf} & Consulta KQL de lecturas (Lst.~\ref{lst:kql}) \\ \hline
+\grupo{3}{Escalamiento y alta disponibilidad} \\ \hline
+E1 · Tres zonas & \texttt{compute.tf} & Instancias en zonas 1, 2 y 3 \\ \hline
+E2 · Sonda de salud & \texttt{loadbalancer.tf} & Métrica de salud (Fig.~\ref{fig:p2logica}) \\ \hline
+E3 · Autoscale & \texttt{compute.tf} & Historial 2\,$\rightarrow$\,4\,$\rightarrow$\,2 (Fig.~\ref{fig:stair}) \\ \hline
+E4 · Reparación automática & \texttt{compute.tf} & Instancia reemplazada sola (P2.1) \\ \hline
+E5 · Alertas por correo & \texttt{monitoring.tf} & Historial de alertas (Tabla~\ref{tab:alertas}) \\ \hline
+\grupo{3}{DevSecOps} \\ \hline
+D1 · Pipeline con Checkov & \texttt{.github/workflows/} & PR \#1 bloqueado y PR \#2 aprobado \\ \hline
+D2 · Riesgos justificados & comentarios en cada recurso & Tabla~\ref{tab:riesgos} \\ \hline
+D3 · Instalación automática & \texttt{cloud-init} + \texttt{app/} & Servidores listos sin pasos manuales \\ \hline
 \end{tabularx}
 \end{table}
-
-%%RESULTADOS%%
 
 % =================================================================
 \section{Resultados de las pruebas}
 % =================================================================
-Locust se ejecutó desde la red del equipo (Cartagena, RTT $\approx$ 200\,ms hacia \texttt{eastus}).
-El \emph{endpoint} \texttt{/work} consume 40\,ms de CPU por petición (8 de cada 9 peticiones) y
-\texttt{/} sirve la portada. Los CSV e informes HTML están en \texttt{evidencias/}.
+Las pruebas de carga se lanzaron con Locust desde Cartagena. Cada visita a la tienda hace
+trabajar la CPU unos 40 milisegundos, para simular una página real. Los resultados completos
+(CSV e informes HTML) están en la carpeta \texttt{evidencias/}.
 
-\subsection{P1.1 Capacidad de una instancia}
-Con el autoscale fijado en \texttt{min = max = 1} (\texttt{terraform apply -var min\_instances=1
--var max\_instances=1}) se aumentaron los usuarios de 5 en 5 (y luego de 10 en 10) cada 45\,s hasta 240.
+\subsection{P1.1 ¿Cuánto aguanta un solo servidor?}
+Dejamos el sistema con un único servidor y fuimos aumentando los usuarios poco a poco, de 5 en 5
+y luego de 10 en 10, hasta 240.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.86\textwidth]{figuras/p1_capacidad.png}
-\caption{Latencia (mediana por escalón de las ventanas de Locust) frente a RPS con una sola instancia.}
+\includegraphics[width=0.82\textwidth]{figuras/p1_capacidad.png}
+\caption{Tiempo de respuesta frente a peticiones por segundo con un solo servidor.}
 \label{fig:cap}
 \end{figure}
 
 \begin{itemize}
-  \item El \textbf{throughput se satura en $\approx$ 120 RPS} (la CPU llega al 98\,\%): desde 170
-        usuarios agregar usuarios solo aumenta la cola y la latencia.
-  \item \textbf{Capacidad sostenible: 119 RPS con p95 < 1 s} (190 usuarios, p95 = 960\,ms) y
-        \textbf{112 RPS con p95 < 500 ms} (150 usuarios). El p95 pasa 1 s de forma sostenida desde
-        200 usuarios.
-  \item Al 70\,\% de CPU (umbral del autoscale) una instancia atiende $\approx$ 60--65 RPS.
-  \item Los escalones con p95 exactamente 1,2\,s y p50 estable (círculos grises) \textbf{no son
-        saturación}: corresponden al primer RTO de TCP (1\,s) más el RTT (0,2\,s), es decir, SYN
-        perdidos en la red doméstica del cliente. Todos los fallos registrados son
-        \texttt{ConnectTimeoutError} (fase de conexión), ninguno 5xx.
+  \item Un servidor atiende como máximo \textbf{unas 120 peticiones por segundo}; a partir de ahí
+        la CPU llega al 98\,\% y solo crecen las esperas.
+  \item \textbf{Capacidad útil: 119 peticiones/s} manteniendo el 95\,\% de las respuestas por debajo
+        de 1 segundo, y \textbf{112 peticiones/s} si se exige menos de medio segundo.
+  \item Al 70\,\% de CPU, el punto en que el autoscale agrega servidores, uno solo atiende unas
+        60 peticiones por segundo.
+  \item Los puntos grises de 1,2\,s no indican saturación: son reintentos de conexión de nuestra
+        propia red doméstica. Ningún error vino del servidor.
 \end{itemize}
 
-\subsection{P1.2 Escalamiento con perfil escalonado (35 min)}
-Perfil: 40 $\rightarrow$ 120 $\rightarrow$ 200 $\rightarrow$ \textbf{280 usuarios} (11 min)
-$\rightarrow$ 120 $\rightarrow$ 20 (12 min). Autoscale restaurado a 2--4 instancias.
-Total: \textbf{207\,435 peticiones, 1\,143 fallidas (0,55\,\%)}.
+\subsection{P1.2 ¿Escala solo cuando sube la demanda?}
+Durante 35 minutos subimos la carga por escalones (de 40 a 280 usuarios) y luego la bajamos a 20,
+con el autoscale configurado entre 2 y 4 servidores. En total hubo \textbf{207\,435 peticiones y
+solo 0,55\,\% de errores}.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{figuras/p1_escalonado.png}
-\caption{RPS y usuarios (Locust), latencia, CPU promedio del VMSS e instancias (\texttt{az vmss list-instances} cada 20\,s), alineados en UTC.}
+\includegraphics[width=0.86\textwidth]{figuras/p1_escalonado.png}
+\caption{Carga, tiempo de respuesta, CPU y número de servidores durante la prueba (hora UTC).}
 \label{fig:stair}
 \end{figure}
 
 \begin{table}[H]
-\centering\small
-\caption{Historial de ejecución del autoscale (\texttt{AutoscaleScaleActionsLog}) y reacción medida.}
+\centering\small\tablaestilo
+\caption{Lo que hizo el autoscale durante la prueba.}
 \label{tab:autoscale}
-\begin{tabular}{@{}llll@{}}
-\toprule
-Acción (UTC) & Instancias & Disparador & Reacción \\
-\midrule
-00:09:19 & 2 $\rightarrow$ 3 & CPU > 70\,\% desde 00:04 (promedio 5 min = 80\,\%) & 5 min 19 s; \emph{Succeeded} 00:09:58 \\
-00:14:49 & 3 $\rightarrow$ 4 & CPU aún > 70\,\% tras el cooldown de 5 min & \emph{Succeeded} 00:15:34 \\
-00:26:49 & 4 $\rightarrow$ 3 & CPU < 30\,\% desde 00:20 (ventana 10 min) & 6 min 49 s \\
-00:37:19 & 3 $\rightarrow$ 2 & CPU < 30\,\% tras el cooldown de 10 min & -- \\
-\bottomrule
+\begin{tabular}{|c|c|p{6.4cm}|c|}
+\hline
+\encab \hd{Hora (UTC)} & \hd{Servidores} & \hd{Motivo} & \hd{Tardó} \\ \hline
+00:09 & 2 $\rightarrow$ 3 & La CPU pasó del 70\,\% a las 00:04 & 5 min 19 s \\ \hline
+00:14 & 3 $\rightarrow$ 4 & La CPU seguía alta tras la espera de 5 min & 5 min \\ \hline
+00:26 & 4 $\rightarrow$ 3 & La CPU bajó del 30\,\% a las 00:20 & 6 min 49 s \\ \hline
+00:37 & 3 $\rightarrow$ 2 & La CPU seguía baja tras la espera de 10 min & 10 min \\ \hline
 \end{tabular}
 \end{table}
 
+\textbf{Análisis.} El autoscale funcionó como se diseñó: subió y bajó en orden, sin oscilar.
+Entre las 00:16 y las 00:20 la CPU estuvo entre 30 y 70\,\% y, como esperábamos, no hizo nada.
+El punto débil es el tiempo de reacción: con 280 usuarios y solo 2 servidores las respuestas se
+hicieron más lentas durante unos 5 minutos, hasta que llegó el tercero. El cuarto servidor estuvo
+listo justo cuando la carga empezaba a bajar. Para picos cortos, el autoscale reactivo llega tarde
+(lo retomamos en la pregunta 2).
 
-\textbf{Análisis.} El autoscale se comportó según el diseño: ningún \emph{flapping}, scale-out
-escalonado respetando el cooldown y scale-in conservador. La histéresis se ve en la
-Fig.~\ref{fig:stair}: entre 00:16 y 00:20 la CPU estuvo entre 30 y 70\,\% y no hubo acciones.
-El costo de la reacción reactiva también es visible. Con 280 usuarios y 2 instancias (CPU 80--86\,\%)
-el p50 subió a 330\,ms durante $\sim$\,5 min hasta que entró la 3.ª instancia (p50 230\,ms). La
-4.ª instancia quedó lista a las 00:15:34, \textbf{6 segundos después de que la carga empezara a
-bajar}: para picos cortos el autoscale reactivo llega tarde, lo que motiva la respuesta a la
-pregunta 2.
-
-\subsection{P2 Pruebas de falla}
-Carga moderada con Locust (40 usuarios, $\approx$ 32 RPS) más un monitor propio
-(\texttt{scripts/probe\_monitor.py}) que envía 10 peticiones/s al balanceador y registra estado
-e instancia (cabecera \texttt{X-Instance}) de cada respuesta. T0 se toma del reloj de la VM
-(falla lógica) o del momento de la orden (falla abrupta).
+\subsection{P2 ¿Sigue funcionando si falla un servidor?}
+Con una carga moderada (40 usuarios), un monitor propio hizo 10 peticiones por segundo y anotó qué
+servidor respondía cada una. Así medimos exactamente cuándo deja de recibir tráfico el servidor
+que falla y cuántas peticiones se pierden.
 
 \begin{table}[H]
-\centering\small
-\caption{Resultados de P2 (monitor a 10 peticiones/s; línea base = 60\,s previos a T0).}
+\centering\small\tablaestilo
+\caption{Resultados de las dos pruebas de falla.}
 \label{tab:p2}
-\begin{tabularx}{\textwidth}{@{}p{4.2cm}YY@{}}
-\toprule
-& \textbf{P2.1 Falla lógica} (\texttt{/health}\,$\rightarrow$\,503) & \textbf{P2.2 Falla abrupta} (instancia eliminada) \\
-\midrule
-T0 (UTC) & 00:38:59 (reloj de la VM, \texttt{run-command}) & 00:55:20 (\texttt{az vmss delete-instances}) \\
-Deja de recibir tráfico & \textbf{T0 + 8,2\,s} (sonda 5\,s $\times$ 2) & T0 + 2,6\,s (la VM se apaga) \\
-Error en la línea base & 1,79\,\% (red del cliente) & 1,84\,\% (red del cliente) \\
-Error en la ventana de falla & \textbf{1,68\,\%} (0--119\,s): \textbf{sin errores adicionales} & \textbf{29,3\,\%} en 0--15\,s (44/150); \textbf{6,5\,\%} en 0--109\,s \\
-Tipo de error & Solo \texttt{URLError}/\texttt{TimeoutError} de red; ningún 5xx & Conexiones a la VM eliminada hasta que la sonda la retira; luego, línea base \\
-Recuperación de capacidad & Reparación automática (E4): \texttt{repairVM} 00:50:19 (T0\,+\,680\,s); instancia 5 en la \emph{misma zona 2} sirviendo en T0\,+\,763\,s & Autoscale (1\,$<$\,mínimo 2) en T0\,+\,28\,s; instancia 6 en la zona 3 \emph{Succeeded} T0\,+\,81\,s y \textbf{sirviendo en T0\,+\,109\,s} \\
-\bottomrule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash\bfseries}p{4.1cm}|Y|Y|}
+\hline
+\encab \hd{Aspecto} & \hd{P2.1 Falla lógica} & \hd{P2.2 Falla abrupta} \\ \hline
+Qué hicimos & Un servidor empieza a reportarse como enfermo & Borramos un servidor con usuarios activos \\ \hline
+Deja de recibir tráfico & \textbf{a los 8 segundos} & a los 3 segundos (se apaga) \\ \hline
+Errores durante la falla & \textbf{1,7\,\%}, igual que antes de la falla & \textbf{29\,\%} solo durante los primeros 15\,s \\ \hline
+Cómo se recupera & Azure lo \textbf{reemplaza solo} a los 11 minutos & El autoscale crea otro en \textbf{109 segundos} \\ \hline
 \end{tabularx}
 \end{table}
 
@@ -342,305 +335,269 @@ Recuperación de capacidad & Reparación automática (E4): \texttt{repairVM} 00:
 \centering
 \begin{subfigure}{0.49\textwidth}
 \includegraphics[width=\linewidth]{figuras/p2_logica.png}
-\caption{P2.1: el tráfico de la instancia 2 cae a 0 en $\sim$8\,s.}
+\caption{Falla lógica.}
 \end{subfigure}\hfill
 \begin{subfigure}{0.49\textwidth}
 \includegraphics[width=\linewidth]{figuras/p2_abrupta.png}
-\caption{P2.2: ráfaga de errores de 15\,s y nueva instancia a los 109\,s.}
+\caption{Falla abrupta.}
 \end{subfigure}
-\caption{Peticiones por segundo por instancia (cabecera \texttt{X-Instance}) y fallidas, alrededor de T0.}
+\caption{Peticiones por segundo que atendió cada servidor (colores) y las fallidas (rojo).}
 \label{fig:p2}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.62\textwidth]{figuras/e2_health_probe.png}
-\caption{E2: métrica \emph{Health Probe Status} por instancia: la instancia en falla lógica queda en 0\,\% hasta que la reparación automática la reemplaza.}
+\includegraphics[width=0.6\textwidth]{figuras/e2_health_probe.png}
+\caption{Salud de cada servidor según el balanceador: el servidor con falla queda en 0\,\% hasta que lo reemplazan.}
 \label{fig:p2logica}
 \end{figure}
 
-\textbf{Análisis.} La falla \emph{lógica} es la que el diseño absorbe mejor: el proceso sigue vivo
-y responde las peticiones en curso mientras la sonda la retira, de modo que el error durante
-la ventana es igual al de la línea base (los errores observados son de la red doméstica del
-cliente, presentes antes y después de T0). La falla \emph{abrupta} sí produce errores: durante
-$\sim$10--15\,s el balanceador sigue enviando conexiones nuevas a una VM que ya no existe, hasta
-completar 2 sondeos fallidos. Con 2 instancias, la mitad del tráfico de esa ventana falla
-(29\,\%); con 3 o 4 instancias la fracción afectada sería 1/3 o 1/4. Reducir el intervalo de
-la sonda acorta esa ventana, a cambio de más tráfico de sondeo y mayor sensibilidad a falsos
-positivos. La reparación automática tardó 11,3\,min (10\,min de gracia más la detección),
-mientras que el autoscale repuso la capacidad mínima en menos de 2\,min.
+\textbf{Análisis.} La falla lógica pasó desapercibida para los usuarios: el servidor siguió
+respondiendo lo que tenía en curso mientras el balanceador lo retiraba, y el porcentaje de error
+no cambió (esos pocos errores vienen de nuestra red doméstica y ya estaban antes de la falla). La
+falla abrupta sí se notó, pero solo unos 15 segundos: es lo que tarda el balanceador en confirmar,
+con dos revisiones de 5\,s, que el servidor ya no existe. Con más servidores en línea, la parte
+afectada del tráfico sería menor. La reparación automática fue lenta (11 minutos) porque Azure
+espera 10 minutos antes de reemplazar; el autoscale, en cambio, repuso la capacidad en menos de
+2 minutos.
 
 
-\subsection{P3 Pruebas de seguridad}
+\subsection{P3 ¿Resisten los controles de seguridad?}
 \begin{enumerate}
-  \item \textbf{Red no autorizada.} Desde Azure Cloud Shell (IP de salida 128.24.198.36), con un
-        usuario que tiene el rol \emph{Key Vault Secrets Officer}, \texttt{az keyvault secret show}
-        devolvió \texttt{Forbidden / ForbiddenByFirewall} (captura \texttt{12\_p3\_cloudshell\_denegado}). El rol no basta:
-        la red también debe estar autorizada.
-  \item \textbf{Filtrado de salida.} Ejecutado dentro de una instancia con
-        \texttt{az vmss run-command}: \texttt{example.com}, \texttt{github.com} y \texttt{neverssl.com}
-        $\rightarrow$ \emph{timeout} (\texttt{curl} código 28); Key Vault $\rightarrow$ 401 (alcanzable,
-        requiere token); IMDS $\rightarrow$ 200. El endpoint \texttt{/egress-check} de la app
-        responde \texttt{blocked (URLError)}. El puerto 22 escucha dentro de la VM pero es inalcanzable
-        desde Internet (sin IP pública, sin regla NAT, NSG \texttt{Deny-All-Inbound}).
-  \item \textbf{Violación de la política (S5).} Ver Listado~\ref{lst:policy}.
+  \item \textbf{Leer el secreto desde otra red.} Desde Azure Cloud Shell, con un usuario que
+        \emph{sí} tiene permiso sobre el Key Vault, la lectura fue rechazada por el firewall
+        (\texttt{ForbiddenByFirewall}). Tener el permiso no basta: también hay que estar en una
+        red autorizada.
+  \item \textbf{Salir a Internet desde un servidor.} Desde dentro de una instancia, los intentos de
+        conectar con \texttt{example.com} o \texttt{github.com} quedaron sin respuesta, mientras
+        que el Key Vault sí respondió. El puerto SSH existe dentro de la máquina, pero no se puede
+        alcanzar desde fuera.
+  \item \textbf{Romper la política.} Intentamos crear una tarjeta de red con IP pública y un recurso
+        en otra región; Azure rechazó ambos (Listado~\ref{lst:policy}).
 \end{enumerate}
 
-
-\begin{lstlisting}[caption={P3.3 / S5: rechazo de Azure Policy (salida abreviada).},label={lst:policy},language={}]
-$ az network nic create -g rg-caribeshop -n nic-prueba-violacion --vnet-name vnet-caribeshop \
-    --subnet snet-app --public-ip-address pip-prueba-violacion
-ERROR: (RequestDisallowedByPolicy) Resource 'nic-prueba-violacion' was disallowed by policy.
-  policyAssignment: "CaribeShop - Denegar NICs con IP publica"
-  policyDefinition: "Network interfaces should not have public IPs" (83a86a26-...)
-$ az network nsg create -g rg-caribeshop -n nsg-prueba-westus -l westus
-ERROR: (RequestDisallowedByPolicy) Resource 'nsg-prueba-westus' was disallowed by policy.
-  policyAssignment: "CaribeShop - Solo region eastus"  policyDefinition: "Allowed locations"
+\begin{lstlisting}[caption={P3.3: Azure Policy rechaza los recursos prohibidos (salida abreviada).},label={lst:policy},language={}]
+$ az network nic create ... --public-ip-address pip-prueba-violacion
+ERROR: (RequestDisallowedByPolicy) ... "CaribeShop - Denegar NICs con IP publica"
+$ az network nsg create ... -l westus
+ERROR: (RequestDisallowedByPolicy) ... "CaribeShop - Solo region eastus"
 \end{lstlisting}
 
-\subsection{DevSecOps (D1): pull request bloqueado y corregido}
-El PR \#1 agregó una regla \texttt{Allow-SSH-Soporte} (22/tcp desde \texttt{*}) al NSG. Los
-trabajos \texttt{fmt}/\texttt{validate} pasaron, pero \textbf{Checkov falló} con
-\texttt{CKV\_AZURE\_10} en \texttt{infra/network.tf\#L43} y el PR se cerró sin fusionar. El PR \#2
-revierte la regla y documenta el soporte con \texttt{az vmss run-command} (plano de control con
-Entra ID y auditado); su pipeline pasó en verde y se fusionó. Ambos PR y sus ejecuciones están en el repositorio (capturas \texttt{17}--\texttt{20\_d1}).
+\subsection{DevSecOps: un cambio inseguro bloqueado}
+Cada cambio al código pasa por GitHub Actions, que revisa formato, validez y seguridad (Checkov).
+Para comprobarlo abrimos a propósito un pull request que dejaba SSH abierto a Internet: Checkov lo
+detectó (\texttt{CKV\_AZURE\_10}), el pipeline falló y el cambio no entró. Un segundo pull request
+lo corrigió, usando el acceso de soporte de Azure en lugar de SSH, y se aprobó en verde.
 
-
-\subsection{Observabilidad: S6 (KQL) y E5 (alertas)}
-\begin{lstlisting}[caption={S6: consulta KQL sobre la auditoría del Key Vault y resultado.},label={lst:kql},language={}]
+\subsection{Auditoría (S6) y alertas (E5)}
+\begin{lstlisting}[caption={S6: consulta KQL de lecturas del secreto y resultado.},label={lst:kql},language={}]
 AzureDiagnostics
 | where ResourceProvider == 'MICROSOFT.KEYVAULT' and OperationName == 'SecretGet'
-| extend Identidad = iff(isnotempty(identity_claim_xms_mirid_s),
-         strcat('MI ', tostring(split(identity_claim_xms_mirid_s,'/')[-1])), 'operador (usuario)')
-| summarize Lecturas=count(), Primera=min(TimeGenerated) by Identidad,
-         Tipo=identity_claim_idtyp_s, Resultado=ResultSignature, Red=isAddressAuthorized_b
------------------------------------------------------------------------------------------
-Identidad            Tipo  Lecturas  Resultado  Red   Cliente
-MI vmss-caribeshop   app   5         OK         True  Python-urllib/3.12
-operador (usuario)   user  1         OK         True  Terraform (azurerm 4.81)
+| summarize Lecturas=count() by Identidad, Tipo=identity_claim_idtyp_s, Resultado=ResultSignature
+-----------------------------------------------------------------------------------
+Identidad             Tipo   Lecturas   Resultado
+MI vmss-caribeshop    app    5          OK
+operador (usuario)    user   1          OK
 \end{lstlisting}
 
-La identidad que lee el secreto es la del VMSS (\texttt{xms\_mirid =
-.../virtualMachineScaleSets/vmss-caribeshop}, \texttt{oid} = \texttt{vmss\_principal\_id}), desde la
-subred autorizada. Las alertas de E5 se dispararon durante las pruebas y quedaron registradas
-(Tabla~\ref{tab:alertas}); el grupo de acciones envió correo y las notificaciones del autoscale
-llegaron al buzón (captura \texttt{14\_e5\_correo\_autoscale}).
+La consulta confirma que quien lee el secreto es la identidad de los servidores, desde la red
+autorizada. Las alertas se dispararon cuando correspondía y llegaron por correo (Tabla~\ref{tab:alertas}).
 
 \begin{table}[H]
-\centering\small
-\caption{E5: historial de alertas (API \texttt{Microsoft.AlertsManagement}).}
+\centering\small\tablaestilo
+\caption{Alertas disparadas durante las pruebas.}
 \label{tab:alertas}
-\begin{tabular}{@{}llll@{}}
-\toprule
-Regla & Sev. & Disparada (UTC) & Resuelta (UTC) \\
-\midrule
-\texttt{alert-health-probe-below-100} & 2 & 23:14:28 & 23:30:29 \\
-\texttt{alert-vmss-cpu-sustained} & 3 & 23:53:11 & 00:00:32 \\
-\texttt{alert-health-probe-below-100} & 2 & 23:57:27 & 00:05:29 \\
-\texttt{alert-health-probe-below-100} & 2 & 00:12:29 & 00:26:41 \\
-\texttt{alert-health-probe-below-100} & 2 & 00:42:33 (P2.1) & 01:06:46 \\
-\bottomrule
+\begin{tabular}{|l|c|c|c|}
+\hline
+\encab \hd{Alerta} & \hd{Gravedad} & \hd{Se activó (UTC)} & \hd{Se resolvió (UTC)} \\ \hline
+Sonda de salud por debajo de 100\,\% & 2 & 23:14 & 23:30 \\ \hline
+CPU alta sostenida & 3 & 23:53 & 00:00 \\ \hline
+Sonda de salud por debajo de 100\,\% & 2 & 23:57 & 00:05 \\ \hline
+Sonda de salud por debajo de 100\,\% & 2 & 00:12 & 00:26 \\ \hline
+Sonda de salud por debajo de 100\,\% (P2.1) & 2 & 00:42 & 01:06 \\ \hline
 \end{tabular}
 \end{table}
-
 
 % =================================================================
 \section{SLA compuesto estimado}
 % =================================================================
-Solo los componentes en la \textbf{ruta crítica de una petición} afectan la disponibilidad
-percibida. Log Analytics, alertas y el backend de Terraform no están en esa ruta. Se usan
-los SLA publicados por Microsoft:
+Para que una visita funcione deben estar disponibles, al mismo tiempo, la IP pública, el
+balanceador y los servidores. Por eso la disponibilidad total se calcula multiplicando la de cada
+uno (los servicios de monitoreo no influyen, porque no están en el camino de la visita).
 
-\begin{center}\small
-\begin{tabular}{@{}lr@{}}
-\toprule
-Componente (en serie) & SLA \\
-\midrule
-IP pública Standard & 99,99\,\% \\
-Load Balancer Standard & 99,99\,\% \\
-VMSS con instancias en $\geq 2$ zonas de disponibilidad & 99,99\,\% \\
-Key Vault (solo para \texttt{/secret}; la app guarda el valor 60\,s en memoria) & 99,99\,\% \\
-\bottomrule
+\begin{table}[H]
+\centering\small\tablaestilo
+\caption{Disponibilidad garantizada por Microsoft para cada componente.}
+\begin{tabular}{|l|c|}
+\hline
+\encab \hd{Componente} & \hd{SLA} \\ \hline
+IP pública Standard & 99,99\,\% \\ \hline
+Balanceador de carga Standard & 99,99\,\% \\ \hline
+Servidores repartidos en 2 o más zonas & 99,99\,\% \\ \hline
+Key Vault (solo para consultar la contraseña) & 99,99\,\% \\ \hline
 \end{tabular}
-\end{center}
+\end{table}
 
 \[
-SLA_{\text{tienda}} = 0{,}9999^{3} = 99{,}97\,\text{\%}\quad(\approx 13{,}1\ \text{min/mes})\qquad
-SLA_{\text{con KV}} = 0{,}9999^{4} = 99{,}96\,\text{\%}\quad(\approx 17{,}5\ \text{min/mes})
+SLA_{\text{tienda}} = 0{,}9999^{3} = \mathbf{99{,}97\,\text{\%}}\quad(\approx 13\ \text{min de caída al mes})
+\qquad
+SLA_{\text{con Key Vault}} = 0{,}9999^{4} = 99{,}96\,\text{\%}
 \]
 
-Con una sola VM sin zonas (situación del año pasado) el SLA de cómputo sería 99,9\,\% con
-disco Premium (o 99,5\,\% con Standard SSD), es decir hasta 43--216 min/mes de caída
-\emph{solo por la VM}. El SLA compuesto supone que la aplicación es \emph{stateless}; una base de
-datos administrada añadiría su propio término al producto.
+Como comparación, con una sola máquina sin zonas (la situación del año pasado) el SLA sería de
+99,5 a 99,9\,\%, es decir, entre 43 y 216 minutos de caída al mes solo por el servidor.
 
 % =================================================================
-\section{Riesgos aceptados (\texttt{\#checkov:skip})}
+\section{Riesgos aceptados}
 % =================================================================
+Checkov marca algunas configuraciones como mejorables. Las que decidimos no cambiar están
+justificadas en el código con un comentario \texttt{\#checkov:skip}; la Tabla~\ref{tab:riesgos}
+las agrupa por recurso.
+
 \begin{table}[H]
-\centering\footnotesize
-\caption{Cada omisión de Checkov con su justificación, impacto y mitigación (D2).}
+\centering\footnotesize\tablaestilo
+\caption{Riesgos aceptados, su justificación y cómo se mitigan.}
 \label{tab:riesgos}
-\begin{tabularx}{\textwidth}{@{}>{\ttfamily\scriptsize}p{2.5cm}p{2.1cm}YYp{0.85cm}@{}}
-\toprule
-\textbf{Check} & \textbf{Recurso} & \textbf{Justificación / impacto} & \textbf{Mitigación} & \textbf{Riesgo}\\
-\midrule
-CKV\_AZURE\_97 & VMSS & \emph{Encryption at host} exige registrar una \emph{feature} de suscripción. Impacto: caché/temporales del host sin cifrado propio. & Discos ya cifrados en reposo (SSE-PMK); sin datos sensibles en disco. & Bajo\\
-CKV\_AZURE\_178 & VMSS & Falso positivo: se usa llave SSH y \texttt{disable\_password\_authentication=true}. & Puerto 22 no alcanzable (NSG, sin IP pública). & Nulo\\
-CKV\_AZURE\_160 & NSG & HTTP 80 desde Internet es el servicio público. Impacto: tráfico sin TLS. & Producción: App Gateway/Front Door con TLS y WAF. & Medio\\
-CKV2\_AZURE\_32 & Key Vault & Sin \emph{private endpoint}. & Firewall \texttt{Deny} + subred (service endpoint) + IP del operador; RBAC. & Bajo\\
-CKV\_AZURE\_189 & Key Vault & Acceso público habilitado \emph{con} firewall para administrar desde la IP del operador. & Prueba P3.1: \texttt{ForbiddenByFirewall} desde otra red. & Bajo\\
-CKV\_AZURE\_206 & Storage (app y estado) & LRS en lugar de ZRS/GRS. Impacto: pérdida ante falla de datacenter. & Estado con versionado y \emph{soft delete}; en producción ZRS. & Bajo\\
-CKV2\_AZURE\_1 & Storage (app y estado) & Cifrado con llaves de Microsoft (no CMK). & SSE AES-256; CMK agrega costo y gestión de llaves. & Bajo\\
-CKV2\_AZURE\_33 & Storage (app y estado) & Sin \emph{private endpoint}. & Firewall \texttt{Deny}, sin llaves compartidas, TLS 1.2. & Bajo\\
-CKV\_AZURE\_33 & Storage (app y estado) & Logging de colas: la cuenta no usa colas. & N/A. & Nulo\\
-CKV\_AZURE\_59 & Storage (app y estado) & Red pública habilitada con \texttt{default\_action=Deny}. & Solo subred y rangos del operador. & Bajo\\
-CKV2\_AZURE\_21 & Contenedores & Logging de lectura de blobs no requerido. & Diagnostic settings si se almacenan datos de negocio. & Bajo\\
-\bottomrule
+\begin{tabularx}{\textwidth}{|p{2.45cm}|Y|Y|c|}
+\hline
+\encab \hd{Regla} & \hd{Qué se aceptó y por qué} & \hd{Cómo se mitiga} & \hd{Riesgo} \\ \hline
+\grupo{4}{Servidores y red} \\ \hline
+\texttt{CKV\_AZURE\_97} & Sin cifrado extra en el host: requiere activar una función especial en la suscripción & Los discos ya están cifrados & Bajo \\ \hline
+\texttt{CKV\_AZURE\_178} & Falso positivo: se usa llave SSH, no contraseña & El puerto 22 no es alcanzable & Nulo \\ \hline
+\texttt{CKV\_AZURE\_160} & El puerto 80 abierto es la propia tienda; el tráfico no va cifrado & En producción: TLS y WAF & Medio \\ \hline
+\grupo{4}{Key Vault} \\ \hline
+\texttt{CKV2\_AZURE\_32} & Sin conexión privada (\emph{private endpoint}) & Firewall: solo la subred y el operador & Bajo \\ \hline
+\texttt{CKV\_AZURE\_189} & Acceso público habilitado, pero filtrado por firewall & Probado en P3.1: otra red es rechazada & Bajo \\ \hline
+\grupo{4}{Almacenamiento (app y estado de Terraform)} \\ \hline
+\texttt{CKV\_AZURE\_206} & Réplica local, no en otra zona o región & Versionado y papelera de 7 días & Bajo \\ \hline
+\texttt{CKV2\_AZURE\_1} & Cifrado con llaves de Microsoft, no propias & Cifrado AES-256 activo & Bajo \\ \hline
+\texttt{CKV2\_AZURE\_33} & Sin conexión privada & Firewall y sin llaves compartidas & Bajo \\ \hline
+\texttt{CKV\_AZURE\_59} & Acceso público habilitado, filtrado por firewall & Solo la subred y el operador & Bajo \\ \hline
+\texttt{CKV\_AZURE\_33} & Registro de colas: no se usan colas & No aplica & Nulo \\ \hline
+\texttt{CKV2\_AZURE\_21} & Registro de lecturas de blobs no necesario & Activarlo si se guardan datos de negocio & Bajo \\ \hline
 \end{tabularx}
 \end{table}
 
 % =================================================================
 \section{Costo mensual estimado en producción}
 % =================================================================
-Precios de la API pública de precios de Azure (\texttt{eastus}, pago por uso, USD, 730 h/mes):
+Calculado con los precios públicos de Azure en East US (pago por uso, 730 horas al mes):
 
-\begin{center}\small
-\begin{tabular}{@{}lrr@{}}
-\toprule
-Recurso & Precio unitario & USD/mes \\
-\midrule
-VM \texttt{D2s\_v4} Linux (por instancia) & 0,096/h & 70,08 \\
-Disco SO Standard SSD E4 (por instancia) & 2,40/mes & 2,40 \\
-Load Balancer Standard (hasta 5 reglas) & 0,025/h & 18,25 \\
-IP pública Standard & 0,005/h & 3,65 \\
-Log Analytics ($\approx$ 2 GB/mes) & 2,30/GB & 4,60 \\
-Key Vault (operaciones, caché de 60\,s) & 0,03/10k & $<$ 1,50 \\
-Alertas de métrica (2) y Storage & -- & $<$ 1,00 \\
-\midrule
-\textbf{Base fija} (LB, IP, logs, KV, alertas) & & \textbf{$\approx$ 29} \\
-\textbf{Con 2 instancias} (mínimo) & & \textbf{$\approx$ 174} \\
-\textbf{Con 4 instancias fijas} (dimensionado para el pico) & & \textbf{$\approx$ 319} \\
-\bottomrule
+\begin{table}[H]
+\centering\small\tablaestilo
+\caption{Costo mensual estimado (USD).}
+\label{tab:costo}
+\begin{tabular}{|l|r|r|}
+\hline
+\encab \hd{Concepto} & \hd{Precio} & \hd{USD/mes} \\ \hline
+\grupo{3}{Por cada servidor} \\ \hline
+Máquina virtual D2s\_v4 (Linux) & 0,096 por hora & 70,08 \\ \hline
+Disco del sistema & 2,40 al mes & 2,40 \\ \hline
+\grupo{3}{Costos fijos} \\ \hline
+Balanceador de carga & 0,025 por hora & 18,25 \\ \hline
+IP pública & 0,005 por hora & 3,65 \\ \hline
+Registros (Log Analytics, $\approx$\,2 GB) & 2,30 por GB & 4,60 \\ \hline
+Key Vault, alertas y almacenamiento & -- & $<$\,2,50 \\ \hline
+\grupo{3}{Total} \\ \hline
+\textbf{Con 2 servidores} (mínimo) & & \textbf{$\approx$\,174} \\ \hline
+\textbf{Con 4 servidores siempre encendidos} & & \textbf{$\approx$\,319} \\ \hline
+\textbf{Con autoscale durante la campaña} & & \textbf{$\approx$\,202} \\ \hline
 \end{tabular}
-\end{center}
+\end{table}
 
-\textbf{Efecto del autoscale.} Suponiendo una campaña con 4 instancias 4 h/día, 3 instancias
-4 h/día y 2 instancias el resto (16 h/día) se consumen $(4\cdot4+3\cdot4+2\cdot16)\cdot30 =
-1\,800$ instancia-hora/mes, es decir $\approx$ USD 173 de cómputo + 29 fijos $\approx$
-\textbf{USD 202/mes}: \textbf{37\,\% menos} que dimensionar fijo para el pico (USD 319), sin
-perder capacidad cuando se necesita. Reservas de 1 año para las 2 instancias base
-reducirían ese componente en $\sim$\,40\,\% adicional.
+\textbf{Cómo ahorra el autoscale.} Si en la campaña se necesitan 4 servidores 4 horas al día,
+3 servidores otras 4 horas y 2 el resto del día, se pagan unas 1\,800 horas de servidor al mes:
+cerca de \textbf{USD 202}. Es \textbf{un 37\,\% menos} que dejar 4 servidores encendidos todo el
+tiempo (USD 319), sin perder capacidad cuando hace falta.
 
 % =================================================================
 \section{Preguntas de análisis}
 % =================================================================
-\paragraph{1. Instancias para 300 RPS con p95 < 500 ms.}
-Con la capacidad medida (P1.1), una instancia sostiene $\approx$\,\textbf{112 RPS con p95 < 500 ms}
-y $\approx$\,119 RPS con p95 < 1 s, con la CPU cerca del 98\,\%. Operar a ese nivel no deja margen,
-así que se dimensiona al \textbf{70\,\% de CPU} (el umbral del autoscale), $\approx$\,62 RPS por
-instancia: $\lceil 300/62\rceil = 5$ instancias, que consumen exactamente los 10 vCPU de la cuota regional. Para tolerar la pérdida de una
-zona sin violar el objetivo se necesitan 2 instancias por zona (6 en total): al caer una zona
-quedan 4 ($\approx$\,450 RPS). \textbf{Con la cuota actual solo es viable sin margen}: 10 vCPU por región
-equivalen a 5 instancias \texttt{D2s\_v4}. Cambios: (a) solicitar aumento de cuota de la familia
-DSv4 a $\geq$\,16 vCPU; (b) subir \texttt{max\_instances} a 6--8; (c) reducir el costo por petición
-(caché de páginas, CDN para contenido estático, un servidor WSGI compilado en lugar de
-\texttt{http.server}).
+\paragraph{1. ¿Cuántos servidores para 300 peticiones/s con respuestas en menos de medio segundo?}
+Un servidor atiende 112 peticiones/s en menos de medio segundo, pero en ese punto su CPU está
+casi al 100\,\%. Para tener margen conviene trabajar al 70\,\% (unas 62 peticiones/s por
+servidor), lo que da $\lceil 300/62\rceil = $ \textbf{5 servidores}. Eso consume exactamente los
+10 núcleos de nuestra cuota, así que \textbf{es viable, pero sin margen}. Para soportar además la
+caída de una zona harían falta 6 (dos por zona). Lo que cambiaríamos: pedir más cuota a Azure
+(al menos 16 núcleos), subir el máximo del autoscale a 6--8 y hacer la aplicación más eficiente
+(caché de páginas, CDN para imágenes y un servidor web más rápido).
 
-\paragraph{2. Tiempo de reacción del autoscale y pico a las 8:00 p.\,m.}
-Medido en P1.2: desde que la CPU superó el 70\,\% hasta que la nueva instancia recibió
-tráfico pasaron \textbf{5\,min 19\,s hasta la acción y $\approx$\,6\,min hasta que la instancia atendió tráfico}, compuestos por la ventana de evaluación (5 min de promedio), la
-latencia de la métrica ($\sim$\,1--3 min), el aprovisionamiento ($\sim$\,1 min) y cloud-init
-($\sim$\,1 min). Ante un pico súbito ese retraso se traduce en latencia alta y errores. Ajustes:
+\paragraph{2. ¿Cuánto tardó el autoscale y qué hacer ante un pico a las 8:00 p.\,m.?}
+Desde que la CPU superó el 70\,\% pasaron \textbf{5 min 19 s hasta que se ordenó el nuevo servidor}
+y unos 6 minutos hasta que atendió tráfico. Ese tiempo es la suma de la ventana de 5 minutos que
+usa para decidir, la demora de la métrica, la creación de la máquina y su instalación. Ante un pico
+repentino serían varios minutos de lentitud. Proponemos:
 \begin{itemize}
-  \item \textbf{Perfil programado} (\emph{recurrence}) de 19:30 a 22:30 (hora de Colombia) con
-        \texttt{minimum = 4}: la capacidad ya está lista cuando empieza la campaña.
-  \item \textbf{Autoscale predictivo} (VMSS, métrica de CPU): pronostica a partir de 7 días de
-        historia y escala por adelantado; primero en modo \emph{forecast only} para validarlo.
-  \item Reglas reactivas más agresivas solo en ese perfil: ventana \texttt{PT2M}, umbral 60\,\%,
-        \texttt{ChangeCount = 2}.
+  \item \textbf{Perfil programado:} de 7:30 a 10:30 p.\,m. mantener al menos 4 servidores, para que
+        la capacidad ya esté lista cuando empiece la campaña.
+  \item \textbf{Autoscale predictivo:} Azure aprende de los últimos 7 días y agrega servidores antes
+        del pico. Primero lo usaríamos solo en modo pronóstico para validarlo.
+  \item \textbf{Reglas más rápidas} solo en ese horario: decidir con 2 minutos de datos, umbral del
+        60\,\% y agregar 2 servidores a la vez.
 \end{itemize}
 
-\paragraph{3. Punto único de falla.}
-Dentro de la región no hay un SPOF de infraestructura: IP pública, LB y VMSS son
-zonal-redundantes. El \textbf{punto único de falla es la región \texttt{eastus}} (todo el
-stack vive en ella) y, a nivel lógico, el \textbf{Key Vault} (una sola instancia regional; la
-caché de 60\,s solo amortigua fallas cortas). También lo es la cuota: si una zona cae, el
-reemplazo de capacidad depende de que haya vCPU disponibles. Eliminar el SPOF regional
-requiere un despliegue activo-pasivo en una segunda región (p.\,ej. \texttt{centralus}) con
-Azure Front Door: $\approx$\,USD 35/mes de Front Door Standard + tráfico, más el stack secundario
-(mínimo $\approx$\,USD 174/mes con 2 instancias, o $\approx$\,USD 100 en frío con 1 instancia).
-Es decir, $+$\,USD 135--210/mes, del 75\,\% al 120\,\% del costo base.
+\paragraph{3. ¿Cuál es ahora el punto único de falla?}
+Dentro de la región no hay uno: la IP, el balanceador y los servidores están repartidos en tres
+zonas. El punto único de falla es \textbf{la propia región East US}, porque todo vive en ella, y en
+menor medida \textbf{el Key Vault}, que es uno solo (la aplicación guarda la contraseña 60\,s en
+memoria, lo que solo cubre fallas cortas). Eliminarlo implica una copia de la plataforma en otra
+región con Azure Front Door delante: unos USD 35/mes de Front Door más la segunda plataforma
+(USD 100 a 174/mes). En total, entre 135 y 210 dólares más al mes, casi duplicar el costo.
 
-\paragraph{4. Si un atacante obtiene ejecución de código en una instancia.}
+\paragraph{4. Si un atacante lograra ejecutar código en un servidor, ¿qué podría hacer?}
+\textbf{Podría} leer la contraseña de la base de datos (es la única que ese servidor puede leer),
+alterar las respuestas de ese servidor o consumir su CPU. \textbf{No podría}:
 \begin{itemize}
-  \item \textbf{Podría:} leer \texttt{db-password} usando la identidad administrada; alterar las
-        respuestas de esa instancia; consumir CPU; consultar IMDS.
-  \item \textbf{No podría:}
-  \begin{itemize}
-    \item leer otros secretos, llaves o certificados: el rol tiene alcance a un solo secreto;
-    \item modificar la infraestructura: la identidad no tiene roles en ARM;
-    \item entrar o moverse por SSH/RDP: no hay IP pública y el NSG niega toda entrada salvo el puerto 80;
-    \item exfiltrar a un servidor propio en Internet: el NSG niega el egress (prueba P3.2);
-    \item leer o escribir en el Storage: no tiene rol de datos y las llaves compartidas están deshabilitadas;
-    \item crear una NIC con IP pública: no tiene permisos y además la política lo niega.
-  \end{itemize}
-  \item \textbf{Riesgo residual:} la etiqueta \texttt{Storage.eastus} permite salir hacia
-        \emph{cualquier} cuenta de almacenamiento de la región, incluso una del atacante, lo que
-        abre un canal de exfiltración. Mitigación: \emph{service endpoint policies}, \emph{private
-        endpoints} o Azure Firewall con filtrado FQDN.
-  \item \textbf{Detección:} las lecturas del secreto quedan registradas en
-        \texttt{AzureDiagnostics} (S6). Tras un incidente se rota el secreto con
-        \texttt{terraform apply -replace=random\_password.db}.
+  \item leer otros secretos: el permiso está limitado a un solo secreto;
+  \item cambiar la infraestructura: el servidor no tiene permisos de administración en Azure;
+  \item entrar a otros servidores por SSH: no hay IPs públicas y la red solo deja pasar la web;
+  \item enviar datos a un servidor propio en Internet: la salida está bloqueada (prueba P3.2);
+  \item usar el almacenamiento: no tiene permisos y las llaves de acceso están desactivadas.
 \end{itemize}
+\textbf{Riesgo que queda:} la salida permitida hacia Storage abarca cualquier cuenta de la región,
+incluso una del atacante. Se cerraría con conexiones privadas o un firewall que filtre por dominio.
+Además, cada lectura del secreto queda registrada (S6), y tras un incidente se puede cambiar la
+contraseña con un solo comando de Terraform.
 
-\paragraph{5. ¿Por qué el escaneo en el pipeline no sustituye a Azure Policy, ni viceversa?}
-Checkov es \emph{preventivo y temprano}: revisa el código en cada PR, da retroalimentación antes
-del despliegue y cubre buenas prácticas que no son de Azure (p.\,ej. \texttt{fmt}). Pero solo ve
-lo que pasa por el repositorio: un cambio hecho desde el portal, la CLI o en otro repositorio
-no lo atraviesa, y un \texttt{\#checkov:skip} puede silenciarlo. Azure Policy actúa en el plano
-de control de ARM y aplica \emph{a cualquier cliente} (portal, CLI, Terraform o un atacante con
-credenciales), además de auditar el inventario existente. Su limitación es que da la
-retroalimentación tarde (al hacer \emph{apply}) y no conoce el contexto del código. Ambas capas
-se complementan; P3.3 muestra que Policy bloquea incluso una petición que no viene de
-Terraform.
+\paragraph{5. ¿Por qué Checkov en el pipeline no reemplaza a Azure Policy, ni al revés?}
+Porque protegen momentos distintos. \textbf{Checkov} revisa el código \emph{antes} de desplegar y
+avisa temprano, pero solo ve lo que pasa por el repositorio: un cambio hecho a mano en el portal no
+lo atraviesa, y un \texttt{\#checkov:skip} puede silenciarlo. \textbf{Azure Policy} actúa
+\emph{dentro de Azure} y bloquea a cualquiera, venga de Terraform, del portal o de un atacante, pero
+solo avisa en el momento de crear el recurso. Juntas cubren ambos frentes: en P3.3 la política
+rechazó recursos creados por fuera de Terraform.
 
-\paragraph{6. El estado de Terraform contiene secretos.}
-El estado guarda en texto claro el valor de \texttt{random\_password.db} (el secreto), la llave
-privada SSH de \texttt{tls\_private\_key} y la topología. Protección aplicada:
+\paragraph{6. El estado de Terraform contiene secretos: ¿cómo se protegió?}
+El archivo de estado guarda la contraseña generada, la llave SSH y el mapa de la infraestructura.
+Lo protegimos así:
 \begin{itemize}
-  \item backend remoto, nunca local ni en Git (\texttt{.gitignore});
-  \item cuenta sin llaves compartidas: acceso solo con Entra ID y RBAC (\emph{Storage Blob Data
-        Contributor} únicamente para el operador);
-  \item firewall limitado a las IPs del operador, TLS 1.2 y cifrado en reposo;
-  \item versionado y \emph{soft delete} de 7 días;
-  \item bloqueo de estado mediante \emph{lease} de blob.
+  \item vive en Azure, nunca en el computador ni en Git;
+  \item la cuenta no acepta llaves de acceso: solo entra quien tenga identidad y permiso en Azure;
+  \item firewall limitado a nuestras IPs, cifrado y conexión segura;
+  \item historial de versiones y papelera de 7 días, y bloqueo para que dos personas no lo editen
+        a la vez.
 \end{itemize}
-Si se filtrara: el atacante tendría la contraseña de la base de datos y la llave SSH (inútil
-sin acceso de red al puerto 22) y conocería la topología. Respuesta: rotar el secreto
-(\texttt{-replace}), regenerar la llave, revisar los logs de acceso a la cuenta y al Key Vault.
-Mejora recomendada: usar atributos \emph{write-only} (\texttt{value\_wo} en
-\texttt{azurerm\_key\_vault\_secret}, Terraform $\geq$ 1.11) y \emph{ephemeral resources} para que el
-secreto no llegue al estado.
+Si se filtrara, el atacante tendría la contraseña y la llave SSH (inútil, porque el puerto 22 no es
+alcanzable) y conocería la arquitectura. Habría que cambiar la contraseña, regenerar la llave y
+revisar los registros de acceso. Como mejora, las versiones recientes de Terraform permiten que
+los secretos nunca se guarden en el estado.
 
 % =================================================================
 \section{Conclusiones}
 % =================================================================
-La plataforma resuelve los tres incidentes de CaribeShop con evidencia medida. Ante la
-\textbf{saturación}, el autoscale pasó de 2 a 4 instancias y volvió a 2 con 0,55\,\% de error en
-207\,435 peticiones. Ante la \textbf{falla de una máquina}, una instancia no sana salió del
-balanceador en 8\,s sin errores adicionales, y tras una eliminación abrupta la capacidad mínima
-volvió en 109\,s. Ante la \textbf{auditoría}, no quedan secretos en el código ni puertos de
-administración expuestos, y un PR que abría SSH fue bloqueado por el pipeline.
+La plataforma resuelve los tres problemas de CaribeShop, y cada solución se comprobó con datos.
+Ante la \textbf{saturación}, el autoscale pasó de 2 a 4 servidores y volvió a 2 con solo 0,55\,\%
+de errores. Ante la \textbf{falla de una máquina}, un servidor enfermo salió de circulación en
+8 segundos sin que los usuarios lo notaran, y cuando borramos uno de golpe la capacidad se
+recuperó en menos de 2 minutos. Ante la \textbf{auditoría}, ya no hay secretos en el código ni
+accesos de administración expuestos, y el pipeline bloqueó un cambio que intentaba abrir SSH.
 
-La seguridad se construyó en capas independientes y cada una se demostró con una prueba
-negativa: firewall del Key Vault, RBAC con alcance a un único secreto, egress denegado y Azure
-Policy. Medir la capacidad (119 RPS por instancia) permitió justificar los umbrales del
-autoscale y dimensionar el escenario de 300 RPS. La principal limitación observada es el retraso
-de $\approx$\,5--6\,min del autoscale reactivo, que para la campaña se mitiga con un perfil
-programado o autoscale predictivo. Todos los recursos se eliminaron con \texttt{terraform destroy}
-y se verificó en el portal. Las capturas y salidas de comandos que respaldan cada requisito están
-en \texttt{evidencias/} del repositorio.
+La seguridad se construyó en capas, y cada una se puso a prueba intentando romperla. Medir cuánto
+aguanta un servidor nos permitió justificar la configuración del autoscale y responder cuántos se
+necesitan para 300 peticiones por segundo. La principal limitación es que el autoscale tarda unos
+5 a 6 minutos en reaccionar, algo que en una campaña se resuelve programándolo con anticipación.
+Al terminar eliminamos todos los recursos con \texttt{terraform destroy}. Las capturas y salidas
+de comandos que respaldan cada requisito están en la carpeta \texttt{evidencias/} del repositorio.
 
 
 \end{document}

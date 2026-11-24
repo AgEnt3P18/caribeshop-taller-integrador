@@ -16,8 +16,7 @@
 \usepackage{longtable}
 \usepackage{array}
 \usepackage{multirow}
-\usepackage{xcolor}
-\usepackage{colortbl}
+\usepackage[table]{xcolor}
 \usepackage{listings}
 \usepackage{caption}
 \usepackage{subcaption}
@@ -27,7 +26,7 @@
 \usepackage{titlesec}
 \usepackage{pifont}
 \usepackage{tikz}
-\usetikzlibrary{positioning,fit,backgrounds,arrows.meta,shapes.geometric}
+\usetikzlibrary{positioning,fit,backgrounds,arrows.meta,shapes.geometric,calc}
 \usepackage{hyperref}
 
 \definecolor{utbblue}{HTML}{0B1F4D}
@@ -35,6 +34,17 @@
 \definecolor{codebg}{HTML}{F5F7FA}
 \definecolor{okgreen}{HTML}{15803D}
 \definecolor{badred}{HTML}{B91C1C}
+\definecolor{thead}{HTML}{0E3B4F}
+\definecolor{turq}{HTML}{0E8C86}
+\definecolor{rowalt}{HTML}{EEF4F7}
+\definecolor{grp}{HTML}{D5EBE9}
+
+% --- estilo de tablas: encabezado oscuro, lineas entre filas, filas alternas ---
+\newcommand{\hd}[1]{\textcolor{white}{\textbf{#1}}}
+\newcommand{\tablaestilo}{\arrayrulecolor{gray!45}\setlength{\arrayrulewidth}{0.5pt}%
+  \renewcommand{\arraystretch}{1.55}\rowcolors{2}{white}{rowalt}}
+\newcommand{\encab}{\rowcolor{thead}}
+\newcommand{\grupo}[2]{\multicolumn{#1}{|l|}{\cellcolor{grp}\textbf{\textcolor{thead}{#2}}}}
 
 \hypersetup{colorlinks=true,linkcolor=utbblue,urlcolor=azure,citecolor=utbblue}
 \captionsetup{font=small,labelfont=bf}

@@ -1,18 +1,14 @@
 \begin{table}[H]
-\centering\small
-\caption{Resultados de P2 (monitor a 10 peticiones/s; línea base = 60\,s previos a T0).}
+\centering\small\tablaestilo
+\caption{Resultados de las dos pruebas de falla.}
 \label{tab:p2}
-\begin{tabularx}{\textwidth}{@{}p{4.2cm}YY@{}}
-\toprule
-& \textbf{P2.1 Falla lógica} (\texttt{/health}\,$\rightarrow$\,503) & \textbf{P2.2 Falla abrupta} (instancia eliminada) \\
-\midrule
-T0 (UTC) & 00:38:59 (reloj de la VM, \texttt{run-command}) & 00:55:20 (\texttt{az vmss delete-instances}) \\
-Deja de recibir tráfico & \textbf{T0 + 8,2\,s} (sonda 5\,s $\times$ 2) & T0 + 2,6\,s (la VM se apaga) \\
-Error en la línea base & 1,79\,\% (red del cliente) & 1,84\,\% (red del cliente) \\
-Error en la ventana de falla & \textbf{1,68\,\%} (0--119\,s): \textbf{sin errores adicionales} & \textbf{29,3\,\%} en 0--15\,s (44/150); \textbf{6,5\,\%} en 0--109\,s \\
-Tipo de error & Solo \texttt{URLError}/\texttt{TimeoutError} de red; ningún 5xx & Conexiones a la VM eliminada hasta que la sonda la retira; luego, línea base \\
-Recuperación de capacidad & Reparación automática (E4): \texttt{repairVM} 00:50:19 (T0\,+\,680\,s); instancia 5 en la \emph{misma zona 2} sirviendo en T0\,+\,763\,s & Autoscale (1\,$<$\,mínimo 2) en T0\,+\,28\,s; instancia 6 en la zona 3 \emph{Succeeded} T0\,+\,81\,s y \textbf{sirviendo en T0\,+\,109\,s} \\
-\bottomrule
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash\bfseries}p{4.1cm}|Y|Y|}
+\hline
+\encab \hd{Aspecto} & \hd{P2.1 Falla lógica} & \hd{P2.2 Falla abrupta} \\ \hline
+Qué hicimos & Un servidor empieza a reportarse como enfermo & Borramos un servidor con usuarios activos \\ \hline
+Deja de recibir tráfico & \textbf{a los 8 segundos} & a los 3 segundos (se apaga) \\ \hline
+Errores durante la falla & \textbf{1,7\,\%}, igual que antes de la falla & \textbf{29\,\%} solo durante los primeros 15\,s \\ \hline
+Cómo se recupera & Azure lo \textbf{reemplaza solo} a los 11 minutos & El autoscale crea otro en \textbf{109 segundos} \\ \hline
 \end{tabularx}
 \end{table}
 
@@ -20,30 +16,28 @@ Recuperación de capacidad & Reparación automática (E4): \texttt{repairVM} 00:
 \centering
 \begin{subfigure}{0.49\textwidth}
 \includegraphics[width=\linewidth]{figuras/p2_logica.png}
-\caption{P2.1: el tráfico de la instancia 2 cae a 0 en $\sim$8\,s.}
+\caption{Falla lógica.}
 \end{subfigure}\hfill
 \begin{subfigure}{0.49\textwidth}
 \includegraphics[width=\linewidth]{figuras/p2_abrupta.png}
-\caption{P2.2: ráfaga de errores de 15\,s y nueva instancia a los 109\,s.}
+\caption{Falla abrupta.}
 \end{subfigure}
-\caption{Peticiones por segundo por instancia (cabecera \texttt{X-Instance}) y fallidas, alrededor de T0.}
+\caption{Peticiones por segundo que atendió cada servidor (colores) y las fallidas (rojo).}
 \label{fig:p2}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.62\textwidth]{figuras/e2_health_probe.png}
-\caption{E2: métrica \emph{Health Probe Status} por instancia: la instancia en falla lógica queda en 0\,\% hasta que la reparación automática la reemplaza.}
+\includegraphics[width=0.6\textwidth]{figuras/e2_health_probe.png}
+\caption{Salud de cada servidor según el balanceador: el servidor con falla queda en 0\,\% hasta que lo reemplazan.}
 \label{fig:p2logica}
 \end{figure}
 
-\textbf{Análisis.} La falla \emph{lógica} es la que el diseño absorbe mejor: el proceso sigue vivo
-y responde las peticiones en curso mientras la sonda la retira, de modo que el error durante
-la ventana es igual al de la línea base (los errores observados son de la red doméstica del
-cliente, presentes antes y después de T0). La falla \emph{abrupta} sí produce errores: durante
-$\sim$10--15\,s el balanceador sigue enviando conexiones nuevas a una VM que ya no existe, hasta
-completar 2 sondeos fallidos. Con 2 instancias, la mitad del tráfico de esa ventana falla
-(29\,\%); con 3 o 4 instancias la fracción afectada sería 1/3 o 1/4. Reducir el intervalo de
-la sonda acorta esa ventana, a cambio de más tráfico de sondeo y mayor sensibilidad a falsos
-positivos. La reparación automática tardó 11,3\,min (10\,min de gracia más la detección),
-mientras que el autoscale repuso la capacidad mínima en menos de 2\,min.
+\textbf{Análisis.} La falla lógica pasó desapercibida para los usuarios: el servidor siguió
+respondiendo lo que tenía en curso mientras el balanceador lo retiraba, y el porcentaje de error
+no cambió (esos pocos errores vienen de nuestra red doméstica y ya estaban antes de la falla). La
+falla abrupta sí se notó, pero solo unos 15 segundos: es lo que tarda el balanceador en confirmar,
+con dos revisiones de 5\,s, que el servidor ya no existe. Con más servidores en línea, la parte
+afectada del tráfico sería menor. La reparación automática fue lenta (11 minutos) porque Azure
+espera 10 minutos antes de reemplazar; el autoscale, en cambio, repuso la capacidad en menos de
+2 minutos.
